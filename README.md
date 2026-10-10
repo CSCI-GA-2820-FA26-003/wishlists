@@ -1,69 +1,113 @@
-# NYU DevOps Project Template
+# Wishlists
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python](https://img.shields.io/badge/Language-Python-blue.svg)](https://python.org/)
+A Wishlist REST API project for NYU CSCI-GA.2820-003, DevOps and Agile Methodologies.
 
-This is a skeleton you can use to start your projects.
+We are building a service where customers can create named wishlists and keep track of products they want to buy. A customer can have more than one wishlist.
 
-**Note:** _Feel free to overwrite this `README.md` file with the one that describes your project._
+The project uses Python, Flask, SQLAlchemy, and PostgreSQL. The database models and create-wishlist endpoint are implemented. Other Sprint 1 endpoints are still in progress.
 
-## Overview
+## Local Setup
 
-This project template contains starter code for your class project. The `/service` folder contains your `models.py` file for your model and a `routes.py` file for your service. The `/tests` folder has test case starter code for testing the model and the service separately. All you need to do is add your functionality. You can use the [lab-flask-tdd](https://github.com/nyu-devops/lab-flask-tdd) for code examples to copy from.
+You will need Git, Docker Desktop, and VS Code with the Dev Containers extension.
 
-## Automatic Setup
+1. Start Docker Desktop.
+2. Clone the repository:
 
-The best way to use this repo is to start your own repo using it as a git template. To do this just press the green **Use this template** button in GitHub and this will become the source for your repository.
+   ```bash
+   git clone https://github.com/CSCI-GA-2820-FA26-003/wishlists.git
+   cd wishlists
+   ```
 
-## Manual Setup
+3. Open the `wishlists` folder in VS Code.
+4. Open the Command Palette and select **Dev Containers: Reopen in Container**.
+5. Wait for the container setup to finish, then open a terminal in VS Code.
 
-You can also clone this repository and then copy and paste the starter code into your project repo folder on your local computer. Be careful not to copy over your own `README.md` file so be selective in what you copy.
+The development container installs the Python dependencies and uses `/app` as the project directory. Docker Compose also starts a PostgreSQL container and configures the database connection.
 
-There are 4 hidden files that you will need to copy manually if you use the Mac Finder or Windows Explorer to copy files from this folder into your repo folder.
+Run the commands below in the development container's terminal.
 
-These should be copied using a bash shell as follows:
+## Running the Service
 
 ```bash
-    cp .gitignore  ../<your_repo_folder>/
-    cp .flaskenv ../<your_repo_folder>/
-    cp .gitattributes ../<your_repo_folder>/
+honcho start
 ```
 
-## Contents
+VS Code is configured to forward port `8080`. Open <http://localhost:8080/> to access the service. If VS Code assigns a different local port, use the address shown in the Ports tab.
 
-The project contains the following:
+The root endpoint currently returns a starter message. Stop the server with `Ctrl+C`.
 
-```text
-.gitignore          - this will ignore vagrant and other metadata files
-.flaskenv           - Environment variables to configure Flask
-.gitattributes      - File to gix Windows CRLF issues
-.devcontainers/     - Folder with support for VSCode Remote Containers
-dot-env-example     - copy to .env to use environment variables
-pyproject.toml      - Poetry list of Python libraries required by your code
+## Tests and Code Checks
 
-service/                   - service python package
-├── __init__.py            - package initializer
-├── config.py              - configuration parameters
-├── models.py              - module with business models
-├── routes.py              - module with service routes
-└── common                 - common code package
-    ├── cli_commands.py    - Flask command to recreate all tables
-    ├── error_handlers.py  - HTTP error handling code
-    ├── log_handlers.py    - logging setup code
-    └── status.py          - HTTP status constants
+Run the tests and coverage check:
 
-tests/                     - test cases package
-├── __init__.py            - package initializer
-├── factories.py           - Factory for testing with fake objects
-├── test_cli_commands.py   - test suite for the CLI
-├── test_models.py         - test suite for business models
-└── test_routes.py         - test suite for service routes
+```bash
+make test
 ```
+
+The required coverage is 95%. The command fails if any test fails or coverage is below that threshold.
+
+Run the code checks:
+
+```bash
+make lint
+```
+
+This runs Flake8 and Pylint. Check their output for errors and warnings.
+
+## Sprint 1 API
+
+`POST /wishlists` is implemented. The other endpoints below are planned; `/` still returns the starter message.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/` | Return service information as JSON |
+| POST | `/wishlists` | Create an empty wishlist |
+| GET | `/wishlists` | List wishlists |
+| GET | `/wishlists/{id}` | Read a wishlist |
+| PUT | `/wishlists/{id}` | Update a wishlist |
+| DELETE | `/wishlists/{id}` | Delete a wishlist |
+
+### Create a Wishlist
+
+`POST /wishlists` accepts JSON with these fields:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `name` | String | Yes | Cannot be empty or contain only whitespace |
+| `customer_id` | Integer | Yes | Identifies the customer |
+
+The database generates the wishlist ID. A new wishlist starts with no items. A customer can have multiple wishlists, including wishlists with the same name.
+
+Example request:
+
+```bash
+curl -i -X POST http://localhost:8080/wishlists \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Birthday", "customer_id": 123}'
+```
+
+The expected response is `201 Created`, with a `Location` header pointing to the new wishlist, such as `http://localhost:8080/wishlists/7`. The JSON body includes the generated ID, submitted name and customer ID, and an empty `items` list.
+
+Missing required fields or an invalid name or customer ID return `400 Bad Request`. Requests containing items also return `400`; items must be added separately. A `text/plain` request returns `415 Unsupported Media Type`. Errors are returned as JSON, and invalid requests do not create a wishlist.
+
+## Project Layout
+
+| Path | Contents |
+| --- | --- |
+| `service/models/` | Wishlist and Item models, shared database methods |
+| `service/routes.py` | API routes |
+| `service/common/` | Error handlers, logging, and HTTP status constants |
+| `tests/test_wishlist.py` and `tests/test_item.py` | Model tests |
+| `tests/test_routes.py` | API tests |
+| `tests/factories.py` | Test data factories |
+| `.devcontainer/` | Development container and PostgreSQL configuration |
+| `Pipfile` and `Pipfile.lock` | Python dependencies |
+| `Makefile` | Development commands |
 
 ## License
 
-Copyright (c) 2016, 2025 [John Rofrano](https://www.linkedin.com/in/JohnRofrano/). All rights reserved.
+Based on the NYU DevOps project template by John Rofrano.
 
-Licensed under the Apache License. See [LICENSE](LICENSE)
+Copyright (c) 2016, 2025 John Rofrano. All rights reserved.
 
-This repository is part of the New York University (NYU) masters class: **CSCI-GA.2820-001 DevOps and Agile Methodologies** created and taught by [John Rofrano](https://cs.nyu.edu/~rofrano/), Adjunct Instructor, NYU Courant Institute, Graduate Division, Computer Science, and NYU Stern School of Business.
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).

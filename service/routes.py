@@ -21,7 +21,7 @@ This service implements a REST API that allows you to Create, Read, Update
 and Delete YourResourceModel
 """
 
-from flask import jsonify, request, url_for, abort
+from flask import jsonify
 from flask import current_app as app  # Import Flask application
 from service.models import YourResourceModel
 from service.common import status  # HTTP Status Codes
@@ -43,4 +43,12 @@ def index():
 #  R E S T   A P I   E N D P O I N T S
 ######################################################################
 
-# Todo: Place your REST API code here ...
+######################################################################
+# LIST ALL WISHLISTS
+######################################################################
+@app.route("/wishlists", methods=["GET"])
+def list_wishlists():
+    """Returns all wishlists"""
+    app.logger.info("Request to list all wishlists")
+    wishlists = YourResourceModel.all()
+    return jsonify([wishlist.serialize() for wishlist in wishlists]), status.HTTP_200_OK

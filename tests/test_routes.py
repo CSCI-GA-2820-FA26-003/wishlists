@@ -25,6 +25,7 @@ from unittest import TestCase
 from wsgi import app
 from service.common import status
 from service.models import db, YourResourceModel
+from .factories import YourResourceModelFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -72,4 +73,24 @@ class TestYourResourceService(TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-    # Todo: Add your test cases here...
+    def test_list_wishlists(self):
+        """It should return all wishlists as a JSON array"""
+        wishlists = YourResourceModelFactory.create_batch(3)
+        for wishlist in wishlists:
+            wishlist.create()
+
+        resp = self.client.get("/wishlists")
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.mimetype, "application/json")
+        data = resp.get_json()
+        self.assertIsInstance(data, list)
+        self.assertCountEqual(data, [wishlist.serialize() for wishlist in wishlists])
+
+    def test_list_wishlists_empty(self):
+        """It should return an empty JSON array when no wishlists exist"""
+        resp = self.client.get("/wishlists")
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.mimetype, "application/json")
+        self.assertEqual(resp.get_json(), [])

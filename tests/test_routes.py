@@ -25,6 +25,7 @@ from unittest import TestCase
 from wsgi import app
 from service.common import status
 from service.models import db, YourResourceModel
+from .factories import YourResourceModelFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
@@ -72,4 +73,28 @@ class TestYourResourceService(TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
-    # Todo: Add your test cases here...
+    def test_delete_wishlist(self):
+        """It should delete only the requested wishlist and return no content"""
+        wishlist = YourResourceModelFactory()
+        wishlist.create()
+        other = YourResourceModelFactory()
+        other.create()
+        wishlist_id = wishlist.id
+        other_id = other.id
+
+        resp = self.client.delete(f"/wishlists/{wishlist_id}")
+
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(resp.data, b"")
+        db.session.remove()
+        self.assertIsNone(YourResourceModel.find(wishlist_id))
+        self.assertIsNotNone(YourResourceModel.find(other_id))
+
+    def test_delete_wishlist_not_found(self):
+        """It should return no content when the wishlist does not exist"""
+        self.assertIsNone(YourResourceModel.find(1))
+
+        resp = self.client.delete("/wishlists/1")
+
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(resp.data, b"")

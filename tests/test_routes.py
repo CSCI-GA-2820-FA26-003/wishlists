@@ -68,8 +68,13 @@ class TestYourResourceService(TestCase):
     ######################################################################
 
     def test_index(self):
-        """It should call the home page"""
+        """It should return service information from the home page"""
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.content_type, "application/json")
+        data = resp.get_json()
+        self.assertEqual(data["name"], "Wishlists Service")
+        self.assertEqual(data["version"], app.config["VERSION"])
+        self.assertEqual(data["list_url"], "/wishlists")
 
     # Todo: Add your test cases here...

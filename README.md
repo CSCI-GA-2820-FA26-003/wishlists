@@ -1,10 +1,8 @@
 # Wishlists
 
-A Wishlist REST API project for NYU CSCI-GA.2820-003, DevOps and Agile Methodologies.
+Wishlist service for NYU CSCI-GA.2820-003, DevOps and Agile Methodologies. Customers can create named wishlists to keep track of products they want to buy.
 
-We are building a service where customers can create named wishlists and keep track of products they want to buy. A customer can have more than one wishlist.
-
-The project uses Python, Flask, SQLAlchemy, and PostgreSQL. The database models and create-wishlist endpoint are implemented. Other Sprint 1 endpoints are still in progress.
+Built with Flask, SQLAlchemy, and PostgreSQL.
 
 ## Local Setup
 
@@ -22,9 +20,7 @@ You will need Git, Docker Desktop, and VS Code with the Dev Containers extension
 4. Open the Command Palette and select **Dev Containers: Reopen in Container**.
 5. Wait for the container setup to finish, then open a terminal in VS Code.
 
-The development container installs the Python dependencies and uses `/app` as the project directory. Docker Compose also starts a PostgreSQL container and configures the database connection.
-
-Run the commands below in the development container's terminal.
+The setup installs the Python dependencies and starts PostgreSQL in a separate container. Run the commands below in the development container's terminal, from `/app`.
 
 ## Running the Service
 
@@ -32,19 +28,17 @@ Run the commands below in the development container's terminal.
 honcho start
 ```
 
-VS Code is configured to forward port `8080`. Open <http://localhost:8080/> to access the service. If VS Code assigns a different local port, use the address shown in the Ports tab.
-
-The root endpoint currently returns a starter message. Stop the server with `Ctrl+C`.
+Open <http://localhost:8080/>. If VS Code forwards a different local port, use the address in the Ports tab. Stop the server with `Ctrl+C`.
 
 ## Tests and Code Checks
 
-Run the tests and coverage check:
+Run all tests:
 
 ```bash
 make test
 ```
 
-The required coverage is 95%. The command fails if any test fails or coverage is below that threshold.
+Tests must pass with at least 95% coverage. They clear Wishlist and Item records in the configured database, so only run them against a development or test database.
 
 Run the code checks:
 
@@ -52,7 +46,7 @@ Run the code checks:
 make lint
 ```
 
-This runs Flake8 and Pylint. Check their output for errors and warnings.
+This runs Flake8 and Pylint. Check the output for errors and warnings, even if the command finishes.
 
 ## Sprint 1 API
 
@@ -76,7 +70,7 @@ This runs Flake8 and Pylint. Check their output for errors and warnings.
 | `name` | String | Yes | Cannot be empty or contain only whitespace |
 | `customer_id` | Integer | Yes | Identifies the customer |
 
-The database generates the wishlist ID. A new wishlist starts with no items. A customer can have multiple wishlists, including wishlists with the same name.
+The database generates `id`. New wishlists start empty; omit `items` or send `[]`. A customer can have multiple wishlists with the same name.
 
 Example request:
 
@@ -86,22 +80,32 @@ curl -i -X POST http://localhost:8080/wishlists \
   -d '{"name": "Birthday", "customer_id": 123}'
 ```
 
-The expected response is `201 Created`, with a `Location` header pointing to the new wishlist, such as `http://localhost:8080/wishlists/7`. The JSON body includes the generated ID, submitted name and customer ID, and an empty `items` list.
+Example response body (the generated ID will vary):
 
-Missing required fields or an invalid name or customer ID return `400 Bad Request`. Requests containing items also return `400`; items must be added separately. A `text/plain` request returns `415 Unsupported Media Type`. Errors are returned as JSON, and invalid requests do not create a wishlist.
+```json
+{
+  "id": 7,
+  "name": "Birthday",
+  "customer_id": 123,
+  "items": []
+}
+```
+
+The response status is `201 Created`. The `Location` header points to the new wishlist, for example `http://localhost:8080/wishlists/7`.
+
+- `400 Bad Request`: missing or invalid required fields, or a non-empty `items` list. Adding items is a separate story.
+- `415 Unsupported Media Type`: the request is not JSON, for example `Content-Type: text/plain`.
+
+Errors return JSON and do not create a wishlist.
 
 ## Project Layout
 
 | Path | Contents |
 | --- | --- |
-| `service/models/` | Wishlist and Item models, shared database methods |
+| `service/models/` | Wishlist and Item models |
 | `service/routes.py` | API routes |
-| `service/common/` | Error handlers, logging, and HTTP status constants |
-| `tests/test_wishlist.py` and `tests/test_item.py` | Model tests |
-| `tests/test_routes.py` | API tests |
-| `tests/factories.py` | Test data factories |
+| `tests/` | Model and API tests, test data factories |
 | `.devcontainer/` | Development container and PostgreSQL configuration |
-| `Pipfile` and `Pipfile.lock` | Python dependencies |
 | `Makefile` | Development commands |
 
 ## License

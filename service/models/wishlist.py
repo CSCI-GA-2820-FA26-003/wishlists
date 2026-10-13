@@ -61,7 +61,9 @@ class Wishlist(db.Model, PersistentBase):
         Populates a Wishlist from a dictionary
 
         id is never read from the data, it comes from the database or the URL.
-        items is optional; when present, each one is deserialized and appended.
+        items is optional; when present, each one is deserialized and APPENDED
+        to self.items. Callers updating an existing Wishlist must remove "items"
+        from the data first, or the existing items will be duplicated.
 
         Args:
             data (dict): A dictionary containing the resource data

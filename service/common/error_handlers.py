@@ -60,14 +60,16 @@ def method_not_supported(error):
     """Handles unsupported HTTP methods with 405_METHOD_NOT_SUPPORTED"""
     message = str(error)
     app.logger.warning(message)
-    return (
-        jsonify(
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-            error="Method not Allowed",
-            message=message,
-        ),
-        status.HTTP_405_METHOD_NOT_ALLOWED,
+    response = jsonify(
+        status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        error="Method not Allowed",
+        message=message,
     )
+    response.status_code = status.HTTP_405_METHOD_NOT_ALLOWED
+    valid_methods = getattr(error, "valid_methods", None)
+    if valid_methods:
+        response.headers["Allow"] = ", ".join(valid_methods)
+    return response
 
 
 @app.errorhandler(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
@@ -88,13 +90,13 @@ def mediatype_not_supported(error):
 @app.errorhandler(status.HTTP_500_INTERNAL_SERVER_ERROR)
 def internal_server_error(error):
     """Handles unexpected server error with 500_SERVER_ERROR"""
-    message = str(error)
-    app.logger.error(message)
+    # The real cause is only logged; clients must never see internal details
+    app.logger.error(str(getattr(error, "original_exception", None) or error))
     return (
         jsonify(
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             error="Internal Server Error",
-            message=message,
+            message="Something went wrong",
         ),
         status.HTTP_500_INTERNAL_SERVER_ERROR,
     )

@@ -4,6 +4,9 @@ Global Configuration for Application
 import os
 import logging
 
+# Service version reported by the root URL
+VERSION = "1.0.0"
+
 # Get configuration from environment
 DATABASE_URI = os.getenv(
     "DATABASE_URI",

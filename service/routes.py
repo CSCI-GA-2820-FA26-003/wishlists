@@ -169,3 +169,13 @@ def delete_wishlist(wishlist_id):
     if wishlist is not None:
         wishlist.delete()
     return "", status.HTTP_204_NO_CONTENT
+
+
+# LIST ALL WISHLISTS
+######################################################################
+@app.route("/wishlists", methods=["GET"])
+def list_wishlists():
+    """Returns all wishlists"""
+    app.logger.info("Request to list all wishlists")
+    wishlists = Wishlist.all()
+    return jsonify([wishlist.serialize() for wishlist in wishlists]), status.HTTP_200_OK

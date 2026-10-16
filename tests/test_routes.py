@@ -325,3 +325,25 @@ class TestWishlistService(TestCase):
 
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(resp.data, b"")
+
+    def test_list_wishlists(self):
+        """It should return all wishlists as a JSON array"""
+        wishlists = WishlistFactory.create_batch(3)
+        for wishlist in wishlists:
+            wishlist.create()
+
+        resp = self.client.get("/wishlists")
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.mimetype, "application/json")
+        data = resp.get_json()
+        self.assertIsInstance(data, list)
+        self.assertCountEqual(data, [wishlist.serialize() for wishlist in wishlists])
+
+    def test_list_wishlists_empty(self):
+        """It should return an empty JSON array when no wishlists exist"""
+        resp = self.client.get("/wishlists")
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.mimetype, "application/json")
+        self.assertEqual(resp.get_json(), [])

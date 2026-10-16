@@ -1,69 +1,117 @@
-# NYU DevOps Project Template
+# Wishlists
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python](https://img.shields.io/badge/Language-Python-blue.svg)](https://python.org/)
+Wishlist service for NYU CSCI-GA.2820-003, DevOps and Agile Methodologies. Customers can create named wishlists to keep track of products they want to buy.
 
-This is a skeleton you can use to start your projects.
+Built with Flask, SQLAlchemy, and PostgreSQL.
 
-**Note:** _Feel free to overwrite this `README.md` file with the one that describes your project._
+## Local Setup
 
-## Overview
+You will need Git, Docker Desktop, and VS Code with the Dev Containers extension.
 
-This project template contains starter code for your class project. The `/service` folder contains your `models.py` file for your model and a `routes.py` file for your service. The `/tests` folder has test case starter code for testing the model and the service separately. All you need to do is add your functionality. You can use the [lab-flask-tdd](https://github.com/nyu-devops/lab-flask-tdd) for code examples to copy from.
+1. Start Docker Desktop.
+2. Clone the repository:
 
-## Automatic Setup
+   ```bash
+   git clone https://github.com/CSCI-GA-2820-FA26-003/wishlists.git
+   cd wishlists
+   ```
 
-The best way to use this repo is to start your own repo using it as a git template. To do this just press the green **Use this template** button in GitHub and this will become the source for your repository.
+3. Open the `wishlists` folder in VS Code.
+4. Open the Command Palette and select **Dev Containers: Reopen in Container**.
+5. Wait for the container setup to finish, then open a terminal in VS Code.
 
-## Manual Setup
+The setup installs the Python dependencies and starts PostgreSQL in a separate container. Run the commands below in the development container's terminal, from `/app`.
 
-You can also clone this repository and then copy and paste the starter code into your project repo folder on your local computer. Be careful not to copy over your own `README.md` file so be selective in what you copy.
-
-There are 4 hidden files that you will need to copy manually if you use the Mac Finder or Windows Explorer to copy files from this folder into your repo folder.
-
-These should be copied using a bash shell as follows:
+## Running the Service
 
 ```bash
-    cp .gitignore  ../<your_repo_folder>/
-    cp .flaskenv ../<your_repo_folder>/
-    cp .gitattributes ../<your_repo_folder>/
+honcho start
 ```
 
-## Contents
+Open <http://localhost:8080/>. If VS Code forwards a different local port, use the address in the Ports tab. Stop the server with `Ctrl+C`.
 
-The project contains the following:
+## Tests and Code Checks
 
-```text
-.gitignore          - this will ignore vagrant and other metadata files
-.flaskenv           - Environment variables to configure Flask
-.gitattributes      - File to gix Windows CRLF issues
-.devcontainers/     - Folder with support for VSCode Remote Containers
-dot-env-example     - copy to .env to use environment variables
-pyproject.toml      - Poetry list of Python libraries required by your code
+Run all tests:
 
-service/                   - service python package
-├── __init__.py            - package initializer
-├── config.py              - configuration parameters
-├── models.py              - module with business models
-├── routes.py              - module with service routes
-└── common                 - common code package
-    ├── cli_commands.py    - Flask command to recreate all tables
-    ├── error_handlers.py  - HTTP error handling code
-    ├── log_handlers.py    - logging setup code
-    └── status.py          - HTTP status constants
-
-tests/                     - test cases package
-├── __init__.py            - package initializer
-├── factories.py           - Factory for testing with fake objects
-├── test_cli_commands.py   - test suite for the CLI
-├── test_models.py         - test suite for business models
-└── test_routes.py         - test suite for service routes
+```bash
+make test
 ```
+
+Tests must pass with at least 95% coverage. They clear Wishlist and Item records in the configured database, so only run them against a development or test database.
+
+Run the code checks:
+
+```bash
+make lint
+```
+
+This runs Flake8 and Pylint. Check the output for errors and warnings, even if the command finishes.
+
+## Sprint 1 API
+
+`POST /wishlists` is implemented. The other endpoints below are planned; `/` still returns the starter message.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/` | Return service information as JSON |
+| POST | `/wishlists` | Create an empty wishlist |
+| GET | `/wishlists` | List wishlists |
+| GET | `/wishlists/{id}` | Read a wishlist |
+| PUT | `/wishlists/{id}` | Update a wishlist |
+| DELETE | `/wishlists/{id}` | Delete a wishlist |
+
+### Create a Wishlist
+
+`POST /wishlists` accepts JSON with these fields:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `name` | String | Yes | Cannot be empty or contain only whitespace |
+| `customer_id` | Integer | Yes | Identifies the customer |
+
+The database generates `id`. New wishlists start empty; omit `items` or send `[]`. A customer can have multiple wishlists with the same name.
+
+Example request:
+
+```bash
+curl -i -X POST http://localhost:8080/wishlists \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Birthday", "customer_id": 123}'
+```
+
+Example response body (the generated ID will vary):
+
+```json
+{
+  "id": 7,
+  "name": "Birthday",
+  "customer_id": 123,
+  "items": []
+}
+```
+
+The response status is `201 Created`. The `Location` header points to the new wishlist, for example `http://localhost:8080/wishlists/7`.
+
+- `400 Bad Request`: missing or invalid required fields, or a non-empty `items` list. Adding items is a separate story.
+- `415 Unsupported Media Type`: the request is not JSON, for example `Content-Type: text/plain`.
+
+Errors return JSON and do not create a wishlist.
+
+## Project Layout
+
+| Path | Contents |
+| --- | --- |
+| `service/models/` | Wishlist and Item models |
+| `service/routes.py` | API routes |
+| `tests/` | Model and API tests, test data factories |
+| `.devcontainer/` | Development container and PostgreSQL configuration |
+| `Makefile` | Development commands |
 
 ## License
 
-Copyright (c) 2016, 2025 [John Rofrano](https://www.linkedin.com/in/JohnRofrano/). All rights reserved.
+Based on the NYU DevOps project template by John Rofrano.
 
-Licensed under the Apache License. See [LICENSE](LICENSE)
+Copyright (c) 2016, 2025 John Rofrano. All rights reserved.
 
-This repository is part of the New York University (NYU) masters class: **CSCI-GA.2820-001 DevOps and Agile Methodologies** created and taught by [John Rofrano](https://cs.nyu.edu/~rofrano/), Adjunct Instructor, NYU Courant Institute, Graduate Division, Computer Science, and NYU Stern School of Business.
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).

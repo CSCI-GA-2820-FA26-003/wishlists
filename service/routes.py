@@ -33,6 +33,7 @@ from service.common import status  # HTTP Status Codes
 @app.route("/")
 def index():
     """Root URL response"""
+    app.logger.info("Request for Root URL")
     return (
         jsonify(
             name="Wishlists Service",

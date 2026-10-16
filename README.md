@@ -50,7 +50,7 @@ This runs Flake8 and Pylint. Check the output for errors and warnings, even if t
 
 ## API
 
-All responses are JSON. `POST` and `PUT` requests must send `Content-Type: application/json`.
+Every response with a body is JSON; `DELETE` returns `204 No Content` with an empty body. `POST` and `PUT` requests must send `Content-Type: application/json`.
 
 | Method | Path | Purpose | Success |
 | --- | --- | --- | --- |
@@ -169,4 +169,4 @@ Copyright (c) 2016, 2025 [John Rofrano](https://www.linkedin.com/in/JohnRofrano/
 
 Licensed under the Apache License. See [LICENSE](LICENSE)
 
-This repository is part of the New York University (NYU) masters class: **CSCI-GA.2820-001 DevOps and Agile Methodologies** created and taught by [John Rofrano](https://cs.nyu.edu/~rofrano/), Adjunct Instructor, NYU Courant Institute, Graduate Division, Computer Science, and NYU Stern School of Business.
+This repository is part of the New York University (NYU) masters class: **CSCI-GA.2820-003 DevOps and Agile Methodologies** created and taught by [John Rofrano](https://cs.nyu.edu/~rofrano/), Adjunct Instructor, NYU Courant Institute, Graduate Division, Computer Science, and NYU Stern School of Business.

@@ -300,6 +300,32 @@ class TestWishlistService(TestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
+    def test_delete_wishlist(self):
+        """It should delete only the requested wishlist and return no content"""
+        wishlist = WishlistFactory()
+        wishlist.create()
+        other = WishlistFactory()
+        other.create()
+        wishlist_id = wishlist.id
+        other_id = other.id
+
+        resp = self.client.delete(f"/wishlists/{wishlist_id}")
+
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(resp.data, b"")
+        db.session.remove()
+        self.assertIsNone(Wishlist.find(wishlist_id))
+        self.assertIsNotNone(Wishlist.find(other_id))
+
+    def test_delete_wishlist_not_found(self):
+        """It should return no content when the wishlist does not exist"""
+        self.assertIsNone(Wishlist.find(1))
+
+        resp = self.client.delete("/wishlists/1")
+
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(resp.data, b"")
+
     def test_list_wishlists(self):
         """It should return all wishlists as a JSON array"""
         wishlists = WishlistFactory.create_batch(3)

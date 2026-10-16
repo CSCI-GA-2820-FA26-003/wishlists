@@ -156,3 +156,14 @@ def update_wishlist(wishlist_id):
 
     app.logger.info("Wishlist with id [%s] updated.", wishlist.id)
     return jsonify(wishlist.serialize()), status.HTTP_200_OK
+
+
+######################################################################
+# LIST ALL WISHLISTS
+######################################################################
+@app.route("/wishlists", methods=["GET"])
+def list_wishlists():
+    """Returns all wishlists"""
+    app.logger.info("Request to list all wishlists")
+    wishlists = Wishlist.all()
+    return jsonify([wishlist.serialize() for wishlist in wishlists]), status.HTTP_200_OK

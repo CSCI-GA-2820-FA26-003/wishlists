@@ -43,4 +43,62 @@ def index():
 #  R E S T   A P I   E N D P O I N T S
 ######################################################################
 
-# Todo: Place your REST API code here ...
+
+######################################################################
+# READ A WISHLIST
+######################################################################
+@app.route("/wishlists/<int:wishlist_id>", methods=["GET"])
+def get_wishlist(wishlist_id):
+    """
+    Retrieve a single Wishlist
+
+    This endpoint will return a Wishlist, with its Items, based on its id
+    """
+    app.logger.info("Request to Retrieve a Wishlist with id [%s]", wishlist_id)
+
+    wishlist = Wishlist.find(wishlist_id)
+    if not wishlist:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Wishlist with id '{wishlist_id}' was not found.",
+        )
+
+    app.logger.info("Returning Wishlist: %s", wishlist.name)
+    return jsonify(wishlist.serialize()), status.HTTP_200_OK
+
+
+######################################################################
+# UPDATE AN EXISTING WISHLIST
+######################################################################
+@app.route("/wishlists/<int:wishlist_id>", methods=["PUT"])
+def update_wishlist(wishlist_id):
+    """
+    Update a Wishlist
+
+    This endpoint will update the name and customer_id of a Wishlist.
+    Items are managed through their own endpoints, so any items in the
+    body are ignored.
+    """
+    app.logger.info("Request to Update a Wishlist with id [%s]", wishlist_id)
+    if not request.is_json:
+        abort(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "Content-Type must be application/json",
+        )
+
+    wishlist = Wishlist.find(wishlist_id)
+    if not wishlist:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Wishlist with id '{wishlist_id}' was not found.",
+        )
+
+    data = request.get_json()
+    if isinstance(data, dict):
+        # deserialize() appends items, which would duplicate the existing ones
+        data.pop("items", None)
+    wishlist.deserialize(data)
+    wishlist.update()
+
+    app.logger.info("Wishlist with id [%s] updated.", wishlist.id)
+    return jsonify(wishlist.serialize()), status.HTTP_200_OK

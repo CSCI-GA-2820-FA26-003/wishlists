@@ -215,3 +215,16 @@ def get_item(wishlist_id, item_id):
     if item is None or item.wishlist_id != wishlist_id:
         abort(status.HTTP_404_NOT_FOUND, f"Item with id '{item_id}' was not found in this wishlist.")
     return jsonify(item.serialize()), status.HTTP_200_OK
+
+
+######################################################################
+# LIST ITEMS IN A WISHLIST
+######################################################################
+@app.route("/wishlists/<int:wishlist_id>/items", methods=["GET"])
+def list_items(wishlist_id):
+    """List the items belonging to one wishlist."""
+    app.logger.info("Request to list items in wishlist %s", wishlist_id)
+    wishlist = Wishlist.find(wishlist_id)
+    if wishlist is None:
+        abort(status.HTTP_404_NOT_FOUND, f"Wishlist with id '{wishlist_id}' was not found.")
+    return jsonify([item.serialize() for item in wishlist.items]), status.HTTP_200_OK

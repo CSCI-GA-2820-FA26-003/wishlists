@@ -228,3 +228,21 @@ def list_items(wishlist_id):
     if wishlist is None:
         abort(status.HTTP_404_NOT_FOUND, f"Wishlist with id '{wishlist_id}' was not found.")
     return jsonify([item.serialize() for item in wishlist.items]), status.HTTP_200_OK
+
+
+######################################################################
+# UPDATE AN ITEM
+######################################################################
+@app.route("/wishlists/<int:wishlist_id>/items/<int:item_id>", methods=["PUT"])
+def update_item(wishlist_id, item_id):
+    """Replace an item's product_id and optional note."""
+    app.logger.info("Request to update item %s in wishlist %s", item_id, wishlist_id)
+    check_content_type("application/json")
+    if Wishlist.find(wishlist_id) is None:
+        abort(status.HTTP_404_NOT_FOUND, f"Wishlist with id '{wishlist_id}' was not found.")
+    item = Item.find(item_id)
+    if item is None or item.wishlist_id != wishlist_id:
+        abort(status.HTTP_404_NOT_FOUND, f"Item with id '{item_id}' was not found in this wishlist.")
+    item.deserialize(request.get_json())
+    item.update()
+    return jsonify(item.serialize()), status.HTTP_200_OK

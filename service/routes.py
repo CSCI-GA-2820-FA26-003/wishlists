@@ -23,7 +23,7 @@ and Delete wishlists
 
 from flask import jsonify, request, url_for, abort
 from flask import current_app as app  # Import Flask application
-from service.models import Wishlist
+from service.models import Wishlist, Item
 from service.common import status  # HTTP Status Codes
 
 
@@ -180,3 +180,23 @@ def list_wishlists():
     app.logger.info("Request to list all wishlists")
     wishlists = Wishlist.all()
     return jsonify([wishlist.serialize() for wishlist in wishlists]), status.HTTP_200_OK
+
+
+######################################################################
+# CREATE AN ITEM
+######################################################################
+@app.route("/wishlists/<int:wishlist_id>/items", methods=["POST"])
+def create_item(wishlist_id):
+    """Add an item to an existing wishlist."""
+    app.logger.info("Request to create an item in wishlist %s", wishlist_id)
+    check_content_type("application/json")
+    wishlist = Wishlist.find(wishlist_id)
+    if wishlist is None:
+        abort(status.HTTP_404_NOT_FOUND, f"Wishlist with id '{wishlist_id}' was not found.")
+
+    item = Item()
+    item.deserialize(request.get_json())
+    item.wishlist_id = wishlist.id
+    item.create()
+    location = f"{url_for('create_item', wishlist_id=wishlist_id, _external=True)}/{item.id}"
+    return jsonify(item.serialize()), status.HTTP_201_CREATED, {"Location": location}

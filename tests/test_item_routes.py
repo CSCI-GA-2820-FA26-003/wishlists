@@ -4,7 +4,7 @@ import logging
 from unittest import TestCase
 from wsgi import app
 from service.models import db, Wishlist, Item
-from tests.factories import WishlistFactory
+from tests.factories import WishlistFactory, ItemFactory
 
 
 class TestItemRoutes(TestCase):
@@ -46,6 +46,32 @@ class TestItemRoutes(TestCase):
         self.assertEqual(response.headers["Location"], f"http://localhost{self.url}/{data['id']}")
         db.session.remove()
         self.assertEqual(Item.find(data["id"]).serialize(), data)
+
+    def test_read_item(self):
+        """It should read an item through its parent wishlist."""
+        item = ItemFactory(wishlist=self.wishlist)
+        item.create()
+        response = self.client.get(f"{self.url}/{item.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), item.serialize())
+
+    def test_read_item_missing(self):
+        """It should return JSON 404 for a missing item or parent."""
+        for url in (f"{self.url}/0", "/wishlists/0/items/0"):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 404)
+                self.assertTrue(response.is_json)
+
+    def test_read_item_wrong_wishlist(self):
+        """It should not return another wishlist's item."""
+        other = WishlistFactory()
+        other.create()
+        item = ItemFactory(wishlist=other)
+        item.create()
+        response = self.client.get(f"{self.url}/{item.id}")
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(response.is_json)
 
     def test_create_item_without_note(self):
         """It should allow an omitted or null note."""

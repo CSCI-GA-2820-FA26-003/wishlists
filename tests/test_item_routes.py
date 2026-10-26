@@ -128,3 +128,29 @@ class TestItemRoutes(TestCase):
         response = self.client.post(self.url, data='{"product_id":10}',
                                     content_type="application/json; charset=utf-8")
         self.assertEqual(response.status_code, 201)
+
+    def test_list_items(self):
+        """It should list only the requested wishlist's items."""
+        items = []
+        for _ in range(2):
+            item = ItemFactory(wishlist=self.wishlist)
+            item.create()
+            items.append(item)
+        other = WishlistFactory()
+        other.create()
+        ItemFactory(wishlist=other).create()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(response.get_json(), [item.serialize() for item in items])
+
+    def test_list_items_empty(self):
+        """It should return an empty list for an empty wishlist."""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), [])
+
+    def test_list_items_missing_wishlist(self):
+        """It should distinguish a missing wishlist from an empty one."""
+        response = self.client.get("/wishlists/0/items")
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("Wishlist", response.get_json()["message"])

@@ -178,7 +178,9 @@ Read and update return the item JSON. List returns an array, or `[]` for an empt
 
 - `400`: invalid JSON or missing/invalid item fields on create or update.
 - `415`: create or update request without `Content-Type: application/json`.
-- `404`: parent wishlist does not exist, or the requested item is missing or belongs to another wishlist. Deleting an already deleted item also returns `404`.
+- `404`: parent wishlist does not exist, the item belongs to another wishlist, or a read/update requests a missing item.
+
+Deleting a missing or already deleted item returns `204` with no body, as long as the parent wishlist exists. Deleting an item that belongs to another wishlist still returns `404` and leaves it unchanged.
 
 ### Errors
 

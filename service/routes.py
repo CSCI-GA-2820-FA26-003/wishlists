@@ -258,7 +258,9 @@ def delete_item(wishlist_id, item_id):
     if Wishlist.find(wishlist_id) is None:
         abort(status.HTTP_404_NOT_FOUND, f"Wishlist with id '{wishlist_id}' was not found.")
     item = Item.find(item_id)
-    if item is None or item.wishlist_id != wishlist_id:
+    if item is None:
+        return "", status.HTTP_204_NO_CONTENT
+    if item.wishlist_id != wishlist_id:
         abort(status.HTTP_404_NOT_FOUND, f"Item with id '{item_id}' was not found in this wishlist.")
     item.delete()
     return "", status.HTTP_204_NO_CONTENT

@@ -246,3 +246,21 @@ def update_item(wishlist_id, item_id):
     item.deserialize(request.get_json())
     item.update()
     return jsonify(item.serialize()), status.HTTP_200_OK
+
+
+######################################################################
+# DELETE AN ITEM
+######################################################################
+@app.route("/wishlists/<int:wishlist_id>/items/<int:item_id>", methods=["DELETE"])
+def delete_item(wishlist_id, item_id):
+    """Delete an item without removing its wishlist."""
+    app.logger.info("Request to delete item %s in wishlist %s", item_id, wishlist_id)
+    if Wishlist.find(wishlist_id) is None:
+        abort(status.HTTP_404_NOT_FOUND, f"Wishlist with id '{wishlist_id}' was not found.")
+    item = Item.find(item_id)
+    if item is None:
+        return "", status.HTTP_204_NO_CONTENT
+    if item.wishlist_id != wishlist_id:
+        abort(status.HTTP_404_NOT_FOUND, f"Item with id '{item_id}' was not found in this wishlist.")
+    item.delete()
+    return "", status.HTTP_204_NO_CONTENT

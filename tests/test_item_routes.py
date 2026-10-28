@@ -234,3 +234,57 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
                                            content_type=content_type)
                 self.assertEqual(response.status_code, 415)
                 self.assertTrue(response.is_json)
+
+    def test_delete_item(self):
+        """It should remove only the requested item and keep its parent."""
+        item = ItemFactory(wishlist=self.wishlist)
+        item.create()
+        remaining = ItemFactory(wishlist=self.wishlist)
+        remaining.create()
+        item_id, remaining_id = item.id, remaining.id
+        parent_id = self.wishlist.id
+        response = self.client.delete(f"{self.url}/{item_id}")
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.data, b"")
+        db.session.remove()
+        self.assertIsNone(Item.find(item_id))
+        self.assertIsNotNone(Item.find(remaining_id))
+        self.assertIsNotNone(Wishlist.find(parent_id))
+        self.assertEqual(self.client.get(f"{self.url}/{item_id}").status_code, 404)
+        self.assertEqual([item["id"] for item in self.client.get(self.url).get_json()], [remaining_id])
+
+    def test_delete_item_missing(self):
+        """It should return 204 when the item is already absent."""
+        response = self.client.delete(f"{self.url}/0")
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.data, b"")
+        self.assertIsNotNone(Wishlist.find(self.wishlist.id))
+
+    def test_delete_item_missing_wishlist(self):
+        """It should still return JSON 404 for a missing parent."""
+        response = self.client.delete("/wishlists/0/items/0")
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(response.is_json)
+
+    def test_delete_item_wrong_wishlist(self):
+        """It should not delete another wishlist's item."""
+        other = WishlistFactory()
+        other.create()
+        item = ItemFactory(wishlist=other)
+        item.create()
+        original = item.serialize()
+        response = self.client.delete(f"{self.url}/{item.id}")
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(response.is_json)
+        db.session.remove()
+        self.assertEqual(Item.find(original["id"]).serialize(), original)
+
+    def test_delete_item_twice(self):
+        """It should return 204 with no body on both delete requests."""
+        item = ItemFactory(wishlist=self.wishlist)
+        item.create()
+        url = f"{self.url}/{item.id}"
+        for _ in range(2):
+            response = self.client.delete(url)
+            self.assertEqual(response.status_code, 204)
+            self.assertEqual(response.data, b"")

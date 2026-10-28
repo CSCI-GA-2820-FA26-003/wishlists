@@ -98,3 +98,38 @@ class Wishlist(db.Model, PersistentBase):
                 "Invalid Wishlist: body of request contained bad or no data "
                 + str(error)
             ) from error
+
+    ##################################################
+    # CLASS METHODS
+    ##################################################
+
+    @classmethod
+    def find_by_customer(cls, customer_id: int) -> list:
+        """Returns all of the Wishlists that belong to a customer
+
+        Args:
+            customer_id (int): the id of the customer whose Wishlists you want
+
+        Returns:
+            list: the matching Wishlists ordered by id, or [] if there are none
+        """
+        logger.info("Processing customer query for %s ...", customer_id)
+        # pylint: disable=no-member
+        return cls.query.filter(cls.customer_id == customer_id).order_by(cls.id).all()
+
+    @classmethod
+    def find_by_name(cls, name: str) -> list:
+        """Returns all of the Wishlists with the given name
+
+        Several customers can own a Wishlist with the same name, so this can
+        return more than one Wishlist.
+
+        Args:
+            name (str): the exact name to match
+
+        Returns:
+            list: the matching Wishlists ordered by id, or [] if there are none
+        """
+        logger.info("Processing name query for %s ...", name)
+        # pylint: disable=no-member
+        return cls.query.filter(cls.name == name).order_by(cls.id).all()

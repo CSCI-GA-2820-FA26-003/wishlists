@@ -117,6 +117,7 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
             {"product_id": None},
             {"product_id": 1.5},
             {"product_id": 10, "note": 123},
+            {"product_id": 10, "note": "x" * 256},
         ):
             with self.subTest(data=data):
                 response = self.client.post(self.url, json=data)
@@ -204,6 +205,20 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(Item.find(item_id).serialize(), expected)
         self.assertEqual(len(Item.all()), 1)
 
+    def test_note_at_max_length(self):
+        """It should save a 255 character note on create and update."""
+        response = self.client.post(
+            self.url, json={"product_id": 10, "note": "x" * 255}
+        )
+        self.assertEqual(response.status_code, 201)
+        item_id = response.get_json()["id"]
+        response = self.client.put(
+            f"{self.url}/{item_id}", json={"product_id": 10, "note": "y" * 255}
+        )
+        self.assertEqual(response.status_code, 200)
+        db.session.remove()
+        self.assertEqual(Item.find(item_id).note, "y" * 255)
+
     def test_create_item_ignores_purchased(self):
         """It should ignore purchased in the body and create an unpurchased item."""
         response = self.client.post(
@@ -270,6 +285,7 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
             {"product_id": None},
             {"product_id": 1.5},
             {"product_id": 10, "note": 123},
+            {"product_id": 10, "note": "x" * 256},
         ):
             with self.subTest(data=data):
                 response = self.client.put(f"{self.url}/{original['id']}", json=data)

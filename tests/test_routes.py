@@ -160,6 +160,22 @@ class TestWishlistService(TestCase):
                 self.assertTrue(response.get_json()["message"])
                 self.assertEqual(len(Wishlist.all()), 0)
 
+    def test_create_wishlist_name_length(self):
+        """It should accept a 63 character name and reject a 64 character one."""
+        response = self.client.post(
+            "/wishlists", json={"name": "x" * 63, "customer_id": 123}
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.get_json()["name"], "x" * 63)
+
+        response = self.client.post(
+            "/wishlists", json={"name": "x" * 64, "customer_id": 123}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(response.is_json)
+        self.assertIn("63", response.get_json()["message"])
+        self.assertEqual(len(Wishlist.all()), 1)
+
     def test_create_wishlist_missing_customer_id(self):
         """It should reject a wishlist without a customer ID."""
         response = self.client.post("/wishlists", json={"name": "Birthday"})
@@ -283,6 +299,21 @@ class TestWishlistService(TestCase):
         new_data = {"name": "renamed", "customer_id": "abc"}
         resp = self.client.put(f"/wishlists/{wishlist.id}", json=new_data)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_wishlist_name_length(self):
+        """It should accept a 63 character name and reject a 64 character one."""
+        wishlist = WishlistFactory(name="Birthday")
+        wishlist.create()
+        url = f"/wishlists/{wishlist.id}"
+
+        resp = self.client.put(url, json={"name": "x" * 64, "customer_id": 1})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(resp.is_json)
+        self.assertEqual(self.client.get(url).get_json()["name"], "Birthday")
+
+        resp = self.client.put(url, json={"name": "x" * 63, "customer_id": 1})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.client.get(url).get_json()["name"], "x" * 63)
 
     def test_update_wishlist_not_a_dict(self):
         """It should not Update a Wishlist when the body is not an object"""

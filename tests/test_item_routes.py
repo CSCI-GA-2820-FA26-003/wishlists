@@ -36,14 +36,18 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
 
     def test_create_item(self):
         """It should create an item in the requested wishlist."""
-        response = self.client.post(self.url, json={"product_id": 10, "note": "For later"})
+        response = self.client.post(
+            self.url, json={"product_id": 10, "note": "For later"}
+        )
         self.assertEqual(response.status_code, 201)
         data = response.get_json()
         self.assertIsInstance(data["id"], int)
         self.assertEqual(data["wishlist_id"], self.wishlist.id)
         self.assertEqual(data["product_id"], 10)
         self.assertEqual(data["note"], "For later")
-        self.assertEqual(response.headers["Location"], f"http://localhost{self.url}/{data['id']}")
+        self.assertEqual(
+            response.headers["Location"], f"http://localhost{self.url}/{data['id']}"
+        )
         db.session.remove()
         self.assertEqual(Item.find(data["id"]).serialize(), data)
 
@@ -85,7 +89,9 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
         """It should use the URL parent and generate the item ID."""
         other = WishlistFactory()
         other.create()
-        response = self.client.post(self.url, json={"id": -1, "wishlist_id": other.id, "product_id": 10})
+        response = self.client.post(
+            self.url, json={"id": -1, "wishlist_id": other.id, "product_id": 10}
+        )
         self.assertEqual(response.status_code, 201)
         data = response.get_json()
         self.assertNotEqual(data["id"], -1)
@@ -102,8 +108,16 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
 
     def test_create_item_bad_data(self):
         """It should reject invalid data without saving an item."""
-        for data in ({}, [], "bad", {"product_id": True}, {"product_id": "10"},
-                     {"product_id": None}, {"product_id": 1.5}, {"product_id": 10, "note": 123}):
+        for data in (
+            {},
+            [],
+            "bad",
+            {"product_id": True},
+            {"product_id": "10"},
+            {"product_id": None},
+            {"product_id": 1.5},
+            {"product_id": 10, "note": 123},
+        ):
             with self.subTest(data=data):
                 response = self.client.post(self.url, json=data)
                 self.assertEqual(response.status_code, 400)
@@ -112,9 +126,11 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
 
     def test_create_item_bad_json(self):
         """It should reject malformed or null JSON."""
-        for body in ('{"product_id":', 'null'):
+        for body in ('{"product_id":', "null"):
             with self.subTest(body=body):
-                response = self.client.post(self.url, data=body, content_type="application/json")
+                response = self.client.post(
+                    self.url, data=body, content_type="application/json"
+                )
                 self.assertEqual(response.status_code, 400)
                 self.assertTrue(response.is_json)
 
@@ -122,11 +138,16 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
         """It should require JSON and accept a charset parameter."""
         for content_type in (None, "text/plain"):
             with self.subTest(content_type=content_type):
-                response = self.client.post(self.url, data='{"product_id":10}', content_type=content_type)
+                response = self.client.post(
+                    self.url, data='{"product_id":10}', content_type=content_type
+                )
                 self.assertEqual(response.status_code, 415)
                 self.assertTrue(response.is_json)
-        response = self.client.post(self.url, data='{"product_id":10}',
-                                    content_type="application/json; charset=utf-8")
+        response = self.client.post(
+            self.url,
+            data='{"product_id":10}',
+            content_type="application/json; charset=utf-8",
+        )
         self.assertEqual(response.status_code, 201)
 
     def test_list_items(self):
@@ -161,15 +182,50 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
         item.create()
         item_id = item.id
         parent_id = self.wishlist.id
-        response = self.client.put(f"{self.url}/{item_id}", json={
-            "product_id": 50, "note": "Updated", "id": -1, "wishlist_id": -1,
-        })
+        response = self.client.put(
+            f"{self.url}/{item_id}",
+            json={
+                "product_id": 50,
+                "note": "Updated",
+                "id": -1,
+                "wishlist_id": -1,
+            },
+        )
         self.assertEqual(response.status_code, 200)
-        expected = {"id": item_id, "wishlist_id": parent_id, "product_id": 50, "note": "Updated"}
+        expected = {
+            "id": item_id,
+            "wishlist_id": parent_id,
+            "product_id": 50,
+            "note": "Updated",
+            "purchased": False,
+        }
         self.assertEqual(response.get_json(), expected)
         db.session.remove()
         self.assertEqual(Item.find(item_id).serialize(), expected)
         self.assertEqual(len(Item.all()), 1)
+
+    def test_create_item_ignores_purchased(self):
+        """It should ignore purchased in the body and create an unpurchased item."""
+        response = self.client.post(
+            self.url, json={"product_id": 10, "purchased": True}
+        )
+        self.assertEqual(response.status_code, 201)
+        data = response.get_json()
+        self.assertFalse(data["purchased"])
+        db.session.remove()
+        self.assertFalse(Item.find(data["id"]).purchased)
+
+    def test_update_item_keeps_purchased(self):
+        """It should keep purchased when an item is updated."""
+        item = ItemFactory(wishlist=self.wishlist, purchased=True)
+        item.create()
+        body = {"product_id": 20, "note": "Updated", "purchased": False}
+        response = self.client.put(f"{self.url}/{item.id}", json=body)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["product_id"], 20)
+        self.assertTrue(response.get_json()["purchased"])
+        db.session.remove()
+        self.assertTrue(Item.find(item.id).purchased)
 
     def test_update_item_without_note(self):
         """It should clear the optional note on a full replacement."""
@@ -205,8 +261,16 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
         item = ItemFactory(wishlist=self.wishlist)
         item.create()
         original = item.serialize()
-        for data in ({}, [], "bad", {"product_id": True}, {"product_id": "10"},
-                     {"product_id": None}, {"product_id": 1.5}, {"product_id": 10, "note": 123}):
+        for data in (
+            {},
+            [],
+            "bad",
+            {"product_id": True},
+            {"product_id": "10"},
+            {"product_id": None},
+            {"product_id": 1.5},
+            {"product_id": 10, "note": 123},
+        ):
             with self.subTest(data=data):
                 response = self.client.put(f"{self.url}/{original['id']}", json=data)
                 self.assertEqual(response.status_code, 400)
@@ -218,9 +282,11 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
         """It should reject malformed or null JSON."""
         item = ItemFactory(wishlist=self.wishlist)
         item.create()
-        for body in ('{"product_id":', 'null'):
+        for body in ('{"product_id":', "null"):
             with self.subTest(body=body):
-                response = self.client.put(f"{self.url}/{item.id}", data=body, content_type="application/json")
+                response = self.client.put(
+                    f"{self.url}/{item.id}", data=body, content_type="application/json"
+                )
                 self.assertEqual(response.status_code, 400)
                 self.assertTrue(response.is_json)
 
@@ -230,8 +296,11 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
         item.create()
         for content_type in (None, "text/plain"):
             with self.subTest(content_type=content_type):
-                response = self.client.put(f"{self.url}/{item.id}", data='{"product_id":10}',
-                                           content_type=content_type)
+                response = self.client.put(
+                    f"{self.url}/{item.id}",
+                    data='{"product_id":10}',
+                    content_type=content_type,
+                )
                 self.assertEqual(response.status_code, 415)
                 self.assertTrue(response.is_json)
 
@@ -251,7 +320,10 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
         self.assertIsNotNone(Item.find(remaining_id))
         self.assertIsNotNone(Wishlist.find(parent_id))
         self.assertEqual(self.client.get(f"{self.url}/{item_id}").status_code, 404)
-        self.assertEqual([item["id"] for item in self.client.get(self.url).get_json()], [remaining_id])
+        self.assertEqual(
+            [item["id"] for item in self.client.get(self.url).get_json()],
+            [remaining_id],
+        )
 
     def test_delete_item_missing(self):
         """It should return 204 when the item is already absent."""

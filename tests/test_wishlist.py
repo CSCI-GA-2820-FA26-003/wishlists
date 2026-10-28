@@ -171,6 +171,43 @@ class TestWishlist(TestCase):
         wishlist.deserialize({"id": 999, "name": "Birthday", "customer_id": 123})
         self.assertIsNone(wishlist.id)
 
+    def test_find_by_customer(self):
+        """It should Find Wishlists by customer_id ordered by id"""
+        first = WishlistFactory(customer_id=1)
+        first.create()
+        other = WishlistFactory(customer_id=2)
+        other.create()
+        second = WishlistFactory(customer_id=1)
+        second.create()
+        found = Wishlist.find_by_customer(1)
+        self.assertEqual([wishlist.id for wishlist in found], [first.id, second.id])
+        for wishlist in found:
+            self.assertEqual(wishlist.customer_id, 1)
+        self.assertEqual([wishlist.id for wishlist in Wishlist.find_by_customer(2)], [other.id])
+
+    def test_find_by_customer_not_found(self):
+        """It should return an empty list when a customer has no Wishlists"""
+        WishlistFactory(customer_id=1).create()
+        self.assertEqual(Wishlist.find_by_customer(99), [])
+
+    def test_find_by_name(self):
+        """It should Find every Wishlist with a name, across customers"""
+        first = WishlistFactory(name="Birthday", customer_id=1)
+        first.create()
+        WishlistFactory(name="Holiday", customer_id=1).create()
+        second = WishlistFactory(name="Birthday", customer_id=2)
+        second.create()
+        found = Wishlist.find_by_name("Birthday")
+        self.assertEqual([wishlist.id for wishlist in found], [first.id, second.id])
+        for wishlist in found:
+            self.assertEqual(wishlist.name, "Birthday")
+
+    def test_find_by_name_not_found(self):
+        """It should return an empty list when no Wishlist has that name"""
+        WishlistFactory(name="Birthday").create()
+        self.assertEqual(Wishlist.find_by_name("Nothing"), [])
+        self.assertEqual(Wishlist.find_by_name("birthday"), [])
+
     ######################################################################
     #  S A D   P A T H S
     ######################################################################

@@ -7,7 +7,7 @@ from service.models import db, Wishlist, Item
 from tests.factories import WishlistFactory, ItemFactory
 
 
-class TestItemRoutes(TestCase):
+class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
     """Check item responses and changes saved in the database."""
 
     @classmethod
@@ -154,3 +154,83 @@ class TestItemRoutes(TestCase):
         response = self.client.get("/wishlists/0/items")
         self.assertEqual(response.status_code, 404)
         self.assertIn("Wishlist", response.get_json()["message"])
+
+    def test_update_item(self):
+        """It should save product_id and note without changing either ID."""
+        item = ItemFactory(wishlist=self.wishlist)
+        item.create()
+        item_id = item.id
+        parent_id = self.wishlist.id
+        response = self.client.put(f"{self.url}/{item_id}", json={
+            "product_id": 50, "note": "Updated", "id": -1, "wishlist_id": -1,
+        })
+        self.assertEqual(response.status_code, 200)
+        expected = {"id": item_id, "wishlist_id": parent_id, "product_id": 50, "note": "Updated"}
+        self.assertEqual(response.get_json(), expected)
+        db.session.remove()
+        self.assertEqual(Item.find(item_id).serialize(), expected)
+        self.assertEqual(len(Item.all()), 1)
+
+    def test_update_item_without_note(self):
+        """It should clear the optional note on a full replacement."""
+        item = ItemFactory(wishlist=self.wishlist)
+        item.create()
+        response = self.client.put(f"{self.url}/{item.id}", json={"product_id": 20})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.get_json()["note"])
+
+    def test_update_item_missing(self):
+        """It should return JSON 404 for a missing item or parent."""
+        for url in (f"{self.url}/0", "/wishlists/0/items/0"):
+            with self.subTest(url=url):
+                response = self.client.put(url, json={"product_id": 20})
+                self.assertEqual(response.status_code, 404)
+                self.assertTrue(response.is_json)
+
+    def test_update_item_wrong_wishlist(self):
+        """It should leave another wishlist's item unchanged."""
+        other = WishlistFactory()
+        other.create()
+        item = ItemFactory(wishlist=other)
+        item.create()
+        original = item.serialize()
+        response = self.client.put(f"{self.url}/{item.id}", json={"product_id": 20})
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(response.is_json)
+        db.session.remove()
+        self.assertEqual(Item.find(original["id"]).serialize(), original)
+
+    def test_update_item_bad_data(self):
+        """It should reject invalid replacements without changing stored data."""
+        item = ItemFactory(wishlist=self.wishlist)
+        item.create()
+        original = item.serialize()
+        for data in ({}, [], "bad", {"product_id": True}, {"product_id": "10"},
+                     {"product_id": None}, {"product_id": 1.5}, {"product_id": 10, "note": 123}):
+            with self.subTest(data=data):
+                response = self.client.put(f"{self.url}/{original['id']}", json=data)
+                self.assertEqual(response.status_code, 400)
+                self.assertTrue(response.is_json)
+                db.session.remove()
+                self.assertEqual(Item.find(original["id"]).serialize(), original)
+
+    def test_update_item_bad_json(self):
+        """It should reject malformed or null JSON."""
+        item = ItemFactory(wishlist=self.wishlist)
+        item.create()
+        for body in ('{"product_id":', 'null'):
+            with self.subTest(body=body):
+                response = self.client.put(f"{self.url}/{item.id}", data=body, content_type="application/json")
+                self.assertEqual(response.status_code, 400)
+                self.assertTrue(response.is_json)
+
+    def test_update_item_content_type(self):
+        """It should require JSON for an update."""
+        item = ItemFactory(wishlist=self.wishlist)
+        item.create()
+        for content_type in (None, "text/plain"):
+            with self.subTest(content_type=content_type):
+                response = self.client.put(f"{self.url}/{item.id}", data='{"product_id":10}',
+                                           content_type=content_type)
+                self.assertEqual(response.status_code, 415)
+                self.assertTrue(response.is_json)

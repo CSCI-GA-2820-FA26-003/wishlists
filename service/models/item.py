@@ -63,7 +63,7 @@ class Item(db.Model, PersistentBase):
         Populates an Item from a dictionary
 
         id and wishlist_id are never read from the data, they come from the URL.
-                note is optional and may be null. purchased is never read from the data
+        note is optional and may be null. purchased is never read from the data
         either: a new Item starts out not purchased and only the purchase
         action can change it.
 

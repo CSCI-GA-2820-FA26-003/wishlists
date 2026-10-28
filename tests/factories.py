@@ -34,4 +34,5 @@ class ItemFactory(factory.Factory):
 
     product_id = factory.Sequence(lambda n: n + 100)
     note = factory.Faker("sentence")
+    purchased = False
     wishlist = factory.SubFactory(WishlistFactory)

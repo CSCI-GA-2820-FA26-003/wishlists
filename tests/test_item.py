@@ -89,7 +89,9 @@ class TestItem(TestCase):
         wishlist.update()
         found = Wishlist.find(wishlist.id)
         self.assertEqual(len(found.items), 2)
-        self.assertEqual({i.product_id for i in found.items}, {item.product_id, item2.product_id})
+        self.assertEqual(
+            {i.product_id for i in found.items}, {item.product_id, item2.product_id}
+        )
 
     def test_find_an_item(self):
         """It should Find an Item by its id"""
@@ -139,6 +141,7 @@ class TestItem(TestCase):
         self.assertEqual(data["wishlist_id"], wishlist.id)
         self.assertEqual(data["product_id"], item.product_id)
         self.assertEqual(data["note"], item.note)
+        self.assertFalse(data["purchased"])
         self.assertIn("Item", repr(item))
 
     def test_deserialize_an_item(self):
@@ -160,6 +163,50 @@ class TestItem(TestCase):
         self.assertEqual(item.product_id, 456)
         self.assertIsNone(item.note)
 
+    def test_item_is_not_purchased_by_default(self):
+        """It should Create an Item with purchased set to False"""
+        wishlist = WishlistFactory()
+        wishlist.create()
+        item = Item()
+        item.deserialize({"product_id": 456})
+        item.wishlist_id = wishlist.id
+        item.create()
+        found = Item.find(item.id)
+        self.assertFalse(found.purchased)
+        self.assertFalse(found.serialize()["purchased"])
+
+    def test_purchased_is_saved(self):
+        """It should save and read back an Item that is purchased"""
+        wishlist = WishlistFactory()
+        item = ItemFactory(wishlist=wishlist, purchased=True)
+        wishlist.create()
+        found = Item.find(item.id)
+        self.assertTrue(found.purchased)
+        self.assertTrue(found.serialize()["purchased"])
+
+    def test_deserialize_ignores_purchased(self):
+        """It should not read purchased from the data"""
+        wishlist = WishlistFactory()
+        wishlist.create()
+        item = Item()
+        item.deserialize({"product_id": 456, "purchased": True})
+        item.wishlist_id = wishlist.id
+        item.create()
+        self.assertFalse(Item.find(item.id).purchased)
+
+    def test_update_keeps_purchased(self):
+        """It should keep purchased when the other fields are updated"""
+        wishlist = WishlistFactory()
+        item = ItemFactory(wishlist=wishlist, purchased=True)
+        wishlist.create()
+        found = Item.find(item.id)
+        found.deserialize({"product_id": 999, "note": "new note", "purchased": False})
+        found.update()
+        found = Item.find(item.id)
+        self.assertEqual(found.product_id, 999)
+        self.assertEqual(found.note, "new note")
+        self.assertTrue(found.purchased)
+
     ######################################################################
     #  S A D   P A T H S
     ######################################################################
@@ -173,12 +220,16 @@ class TestItem(TestCase):
         """It should not Deserialize an Item with a non-integer product_id"""
         item = Item()
         for bad_id in ["456", 4.5, True, None]:
-            self.assertRaises(DataValidationError, item.deserialize, {"product_id": bad_id})
+            self.assertRaises(
+                DataValidationError, item.deserialize, {"product_id": bad_id}
+            )
 
     def test_deserialize_bad_note(self):
         """It should not Deserialize an Item with a non-string note"""
         item = Item()
-        self.assertRaises(DataValidationError, item.deserialize, {"product_id": 456, "note": 123})
+        self.assertRaises(
+            DataValidationError, item.deserialize, {"product_id": 456, "note": 123}
+        )
 
     def test_deserialize_bad_data(self):
         """It should not Deserialize bad data"""

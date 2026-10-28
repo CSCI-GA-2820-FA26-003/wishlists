@@ -41,6 +41,9 @@ class Item(db.Model, PersistentBase):
     product_id = db.Column(db.Integer, nullable=False)
     note = db.Column(db.String(255), nullable=True)  # note is optional
 
+    # purchased is read-only in request bodies, it only changes through the purchase action
+    purchased = db.Column(db.Boolean, nullable=False, default=False)
+
     def __repr__(self):
         return f"<Item product_id=[{self.product_id}] id=[{self.id}] wishlist[{self.wishlist_id}]>"
 
@@ -52,6 +55,7 @@ class Item(db.Model, PersistentBase):
             "wishlist_id": self.wishlist_id,
             "product_id": self.product_id,
             "note": self.note,
+            "purchased": self.purchased,
         }
 
     def deserialize(self, data: dict) -> None:
@@ -59,7 +63,9 @@ class Item(db.Model, PersistentBase):
         Populates an Item from a dictionary
 
         id and wishlist_id are never read from the data, they come from the URL.
-        note is optional and may be null.
+                note is optional and may be null. purchased is never read from the data
+        either: a new Item starts out not purchased and only the purchase
+        action can change it.
 
         Args:
             data (dict): A dictionary containing the resource data
@@ -75,7 +81,9 @@ class Item(db.Model, PersistentBase):
             self.product_id = product_id
             self.note = note
         except KeyError as error:
-            raise DataValidationError("Invalid Item: missing " + error.args[0]) from error
+            raise DataValidationError(
+                "Invalid Item: missing " + error.args[0]
+            ) from error
         except TypeError as error:
             raise DataValidationError(
                 "Invalid Item: body of request contained bad or no data " + str(error)

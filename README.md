@@ -1,5 +1,8 @@
 # Wishlists
 
+[![CI Build](https://github.com/CSCI-GA-2820-FA26-003/wishlists/actions/workflows/ci.yml/badge.svg)](https://github.com/CSCI-GA-2820-FA26-003/wishlists/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/CSCI-GA-2820-FA26-003/wishlists/branch/master/graph/badge.svg)](https://codecov.io/gh/CSCI-GA-2820-FA26-003/wishlists)
+
 Wishlist service for NYU CSCI-GA.2820-003, DevOps and Agile Methodologies. Customers can create named wishlists to keep track of products they want to buy.
 
 Built with Flask, SQLAlchemy, and PostgreSQL.

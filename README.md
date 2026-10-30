@@ -164,18 +164,6 @@ Returns `204 No Content` with an empty body and deletes the wishlist's items wit
 
 ### Items
 
-To mark an existing item as purchased:
-
-```bash
-curl -i -X PUT http://localhost:8080/wishlists/$WISHLIST_ID/items/$ITEM_ID/purchase
-```
-
-No body or `Content-Type` header is needed. The response is `200 OK` with the
-item JSON and `purchased: true`. A later GET returns the saved value. Repeating
-the request returns `200` and leaves it purchased; other fields stay unchanged.
-A missing wishlist, missing item, or item belonging to another wishlist returns
-JSON `404` without changing the item.
-
 An item belongs to one wishlist. `product_id` must be an integer; `note` is an optional string of at most 255 characters, or null. The service stores the product ID but does not check a separate product catalog. `purchased` is a boolean that starts as `false`. Body fields `id`, `wishlist_id` and `purchased` are ignored on create and update; `purchased` only changes through the purchase action.
 
 Use the wishlist ID returned by `POST /wishlists`, then add an item:
@@ -208,6 +196,20 @@ Read and update return the item JSON. List returns an array, or `[]` for an empt
 - `404`: parent wishlist does not exist, the item belongs to another wishlist, or a read/update requests a missing item.
 
 Deleting a missing or already deleted item returns `204` with no body, as long as the parent wishlist exists. Deleting an item that belongs to another wishlist still returns `404` and leaves it unchanged.
+
+### Purchase an item
+
+To mark an existing item as purchased:
+
+```bash
+curl -i -X PUT http://localhost:8080/wishlists/$WISHLIST_ID/items/$ITEM_ID/purchase
+```
+
+No body or `Content-Type` header is needed. The response is `200 OK` with the
+item JSON and `purchased: true`. A later GET returns the saved value. Repeating
+the request returns `200` and leaves it purchased; other fields stay unchanged.
+A missing wishlist, missing item, or item belonging to another wishlist returns
+JSON `404` without changing the item.
 
 ### Errors
 

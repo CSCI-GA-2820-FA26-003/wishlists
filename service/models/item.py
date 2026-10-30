@@ -24,6 +24,9 @@ from .persistent_base import db, PersistentBase, DataValidationError
 
 logger = logging.getLogger("flask.app")
 
+# Longest note the database column can hold
+NOTE_MAX_LENGTH = 255
+
 
 ######################################################################
 #  I T E M   M O D E L
@@ -39,7 +42,7 @@ class Item(db.Model, PersistentBase):
         db.Integer, db.ForeignKey("wishlist.id", ondelete="CASCADE"), nullable=False
     )
     product_id = db.Column(db.Integer, nullable=False)
-    note = db.Column(db.String(255), nullable=True)  # note is optional
+    note = db.Column(db.String(NOTE_MAX_LENGTH), nullable=True)  # note is optional
 
     # purchased is read-only in request bodies, it only changes through the purchase action
     purchased = db.Column(db.Boolean, nullable=False, default=False)
@@ -78,6 +81,10 @@ class Item(db.Model, PersistentBase):
                 raise DataValidationError("Invalid Item: product_id must be an integer")
             if note is not None and not isinstance(note, str):
                 raise DataValidationError("Invalid Item: note must be a string")
+            if note is not None and len(note) > NOTE_MAX_LENGTH:
+                raise DataValidationError(
+                    f"Invalid Item: note must be at most {NOTE_MAX_LENGTH} characters"
+                )
             self.product_id = product_id
             self.note = note
         except KeyError as error:

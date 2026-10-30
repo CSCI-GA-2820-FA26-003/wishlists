@@ -231,6 +231,21 @@ class TestItem(TestCase):
             DataValidationError, item.deserialize, {"product_id": 456, "note": 123}
         )
 
+    def test_deserialize_note_at_max_length(self):
+        """It should Deserialize and save an Item with a 255 character note"""
+        wishlist = WishlistFactory()
+        wishlist.create()
+        item = Item(wishlist_id=wishlist.id)
+        item.deserialize({"product_id": 456, "note": "x" * 255})
+        item.create()
+        self.assertEqual(Item.find(item.id).note, "x" * 255)
+
+    def test_deserialize_note_too_long(self):
+        """It should not Deserialize an Item with a note over 255 characters"""
+        item = Item()
+        data = {"product_id": 456, "note": "x" * 256}
+        self.assertRaises(DataValidationError, item.deserialize, data)
+
     def test_deserialize_bad_data(self):
         """It should not Deserialize bad data"""
         item = Item()

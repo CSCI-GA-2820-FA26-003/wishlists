@@ -25,6 +25,9 @@ from .item import Item
 
 logger = logging.getLogger("flask.app")
 
+# Longest name the database column can hold
+NAME_MAX_LENGTH = 63
+
 
 #  wishlist model
 class Wishlist(db.Model, PersistentBase):
@@ -33,7 +36,7 @@ class Wishlist(db.Model, PersistentBase):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(63), nullable=False)
+    name = db.Column(db.String(NAME_MAX_LENGTH), nullable=False)
     customer_id = db.Column(db.Integer, nullable=False)
     # delete-orphan: deleting a Wishlist (or removing an Item from .items) deletes the Item
     items = db.relationship(
@@ -75,6 +78,10 @@ class Wishlist(db.Model, PersistentBase):
             if not isinstance(name, str) or not name.strip():
                 raise DataValidationError(
                     "Invalid Wishlist: name must be a non-empty string"
+                )
+            if len(name) > NAME_MAX_LENGTH:
+                raise DataValidationError(
+                    f"Invalid Wishlist: name must be at most {NAME_MAX_LENGTH} characters"
                 )
             if not isinstance(customer_id, int) or isinstance(customer_id, bool):
                 raise DataValidationError(

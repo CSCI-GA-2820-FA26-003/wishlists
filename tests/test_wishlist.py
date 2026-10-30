@@ -229,6 +229,19 @@ class TestWishlist(TestCase):
             data = {"name": bad_name, "customer_id": 123}
             self.assertRaises(DataValidationError, wishlist.deserialize, data)
 
+    def test_deserialize_name_at_max_length(self):
+        """It should Deserialize and save a Wishlist with a 63 character name"""
+        wishlist = Wishlist()
+        wishlist.deserialize({"name": "x" * 63, "customer_id": 123})
+        wishlist.create()
+        self.assertEqual(Wishlist.find(wishlist.id).name, "x" * 63)
+
+    def test_deserialize_name_too_long(self):
+        """It should not Deserialize a Wishlist with a name over 63 characters"""
+        wishlist = Wishlist()
+        data = {"name": "x" * 64, "customer_id": 123}
+        self.assertRaises(DataValidationError, wishlist.deserialize, data)
+
     def test_deserialize_bad_customer_id(self):
         """It should not Deserialize a Wishlist with a non-integer customer_id"""
         wishlist = Wishlist()

@@ -249,6 +249,23 @@ def update_item(wishlist_id, item_id):
 
 
 ######################################################################
+# PURCHASE AN ITEM
+######################################################################
+@app.route("/wishlists/<int:wishlist_id>/items/<int:item_id>/purchase", methods=["PUT"])
+def purchase_item(wishlist_id, item_id):
+    """Mark an item as purchased within its own wishlist."""
+    app.logger.info("Request to purchase item %s in wishlist %s", item_id, wishlist_id)
+    if Wishlist.find(wishlist_id) is None:
+        abort(status.HTTP_404_NOT_FOUND, f"Wishlist with id '{wishlist_id}' was not found.")
+    item = Item.find(item_id)
+    if item is None or item.wishlist_id != wishlist_id:
+        abort(status.HTTP_404_NOT_FOUND, f"Item with id '{item_id}' was not found in this wishlist.")
+    item.purchased = True
+    item.update()
+    return jsonify(item.serialize()), status.HTTP_200_OK
+
+
+######################################################################
 # DELETE AN ITEM
 ######################################################################
 @app.route("/wishlists/<int:wishlist_id>/items/<int:item_id>", methods=["DELETE"])

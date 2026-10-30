@@ -34,6 +34,75 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
     def tearDown(self):
         db.session.remove()
 
+    def test_purchase_item(self):
+        """It should persist a purchase without changing the other fields."""
+        item = ItemFactory(wishlist=self.wishlist, purchased=False)
+        item.create()
+        item_id = item.id
+        expected = item.serialize()
+        expected["purchased"] = True
+        url = f"{self.url}/{item_id}"
+        response = self.client.put(f"{url}/purchase")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), expected)
+        db.session.remove()
+        self.assertEqual(Item.find(item_id).serialize(), expected)
+        self.assertEqual(self.client.get(url).get_json(), expected)
+
+    def test_purchase_item_twice(self):
+        """It should return the same purchased item on repeated requests."""
+        item = ItemFactory(wishlist=self.wishlist, purchased=False)
+        item.create()
+        url = f"{self.url}/{item.id}/purchase"
+        first = self.client.put(url)
+        second = self.client.put(url)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertTrue(second.get_json()["purchased"])
+        self.assertEqual(first.get_json(), second.get_json())
+
+    def test_purchase_item_ignores_body(self):
+        """It should not require JSON or read fields from the body."""
+        item = ItemFactory(wishlist=self.wishlist, purchased=False)
+        item.create()
+        expected = item.serialize()
+        expected["purchased"] = True
+        response = self.client.put(
+            f"{self.url}/{item.id}/purchase",
+            data='{"purchased": false, "product_id": -1}',
+            content_type="text/plain",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), expected)
+
+    def test_purchase_item_missing(self):
+        """It should return JSON 404 without changing existing items."""
+        item = ItemFactory(wishlist=self.wishlist, purchased=False)
+        item.create()
+        item_id = item.id
+        expected = item.serialize()
+        for url in (f"{self.url}/0/purchase", f"/wishlists/0/items/{item_id}/purchase"):
+            with self.subTest(url=url):
+                response = self.client.put(url)
+                self.assertEqual(response.status_code, 404)
+                self.assertTrue(response.is_json)
+                db.session.remove()
+                self.assertEqual(Item.find(item_id).serialize(), expected)
+
+    def test_purchase_item_wrong_wishlist(self):
+        """It should leave another wishlist's item unchanged."""
+        other = WishlistFactory()
+        other.create()
+        item = ItemFactory(wishlist=other, purchased=False)
+        item.create()
+        item_id = item.id
+        expected = item.serialize()
+        response = self.client.put(f"{self.url}/{item_id}/purchase")
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(response.is_json)
+        db.session.remove()
+        self.assertEqual(Item.find(item_id).serialize(), expected)
+
     def test_create_item(self):
         """It should create an item in the requested wishlist."""
         response = self.client.post(

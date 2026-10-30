@@ -67,6 +67,7 @@ Every response with a body is JSON; successful `DELETE` requests return `204 No 
 | GET | `/wishlists/{id}/items/{item_id}` | Read an item | `200 OK` |
 | GET | `/wishlists/{id}/items` | List items in a wishlist | `200 OK` |
 | PUT | `/wishlists/{id}/items/{item_id}` | Update an item | `200 OK` |
+| PUT | `/wishlists/{id}/items/{item_id}/purchase` | Mark an item as purchased | `200 OK` |
 | DELETE | `/wishlists/{id}/items/{item_id}` | Delete an item | `204 No Content` |
 
 ### Wishlist JSON
@@ -162,6 +163,18 @@ curl -i -X DELETE http://localhost:8080/wishlists/7
 Returns `204 No Content` with an empty body and deletes the wishlist's items with it. Deleting an id that does not exist also returns `204`, so the call is idempotent.
 
 ### Items
+
+To mark an existing item as purchased:
+
+```bash
+curl -i -X PUT http://localhost:8080/wishlists/$WISHLIST_ID/items/$ITEM_ID/purchase
+```
+
+No body or `Content-Type` header is needed. The response is `200 OK` with the
+item JSON and `purchased: true`. A later GET returns the saved value. Repeating
+the request returns `200` and leaves it purchased; other fields stay unchanged.
+A missing wishlist, missing item, or item belonging to another wishlist returns
+JSON `404` without changing the item.
 
 An item belongs to one wishlist. `product_id` must be an integer; `note` is an optional string of at most 255 characters, or null. The service stores the product ID but does not check a separate product catalog. `purchased` is a boolean that starts as `false`. Body fields `id`, `wishlist_id` and `purchased` are ignored on create and update; `purchased` only changes through the purchase action.
 

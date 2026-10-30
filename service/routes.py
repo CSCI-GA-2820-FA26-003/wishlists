@@ -176,9 +176,24 @@ def delete_wishlist(wishlist_id):
 ######################################################################
 @app.route("/wishlists", methods=["GET"])
 def list_wishlists():
-    """Returns all wishlists"""
-    app.logger.info("Request to list all wishlists")
-    wishlists = Wishlist.all()
+    """Returns all wishlists, optionally filtered by customer_id or name"""
+    app.logger.info("Request to list wishlists")
+    customer_id = request.args.get("customer_id")
+    name = request.args.get("name")
+
+    if customer_id is not None:
+        try:
+            customer_id = int(customer_id)
+        except ValueError:
+            abort(status.HTTP_400_BAD_REQUEST, f"customer_id must be an integer, got '{customer_id}'")
+        app.logger.info("Filtering by customer_id: %s", customer_id)
+        wishlists = Wishlist.find_by_customer(customer_id)
+    elif name is not None:
+        app.logger.info("Filtering by name: %s", name)
+        wishlists = Wishlist.find_by_name(name)
+    else:
+        wishlists = Wishlist.all()
+
     return jsonify([wishlist.serialize() for wishlist in wishlists]), status.HTTP_200_OK
 
 

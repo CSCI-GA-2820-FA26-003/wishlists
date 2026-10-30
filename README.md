@@ -55,7 +55,7 @@ Every response with a body is JSON; successful `DELETE` requests return `204 No 
 | Method | Path | Purpose | Success |
 | --- | --- | --- | --- |
 | GET | `/` | Service information | `200 OK` |
-| GET | `/wishlists` | List all wishlists | `200 OK` |
+| GET | `/wishlists` | List wishlists, optionally filtered by `customer_id` or `name` | `200 OK` |
 | POST | `/wishlists` | Create a wishlist | `201 Created` + `Location` header |
 | GET | `/wishlists/{id}` | Read one wishlist with its items | `200 OK` |
 | PUT | `/wishlists/{id}` | Update a wishlist's name and customer | `200 OK` |
@@ -92,11 +92,22 @@ Returns `{"list_url": "/wishlists", "name": "Wishlists Service", "version": "1.0
 
 ### GET /wishlists
 
-Returns a JSON array of all wishlists, each in the format above. Returns `[]` when there are none.
+Returns a JSON array of wishlists, each in the format above. Returns `[]` when there are none.
+
+Optional query parameters:
+
+- `customer_id` (integer): only wishlists owned by that customer.
+- `name` (exact match): only wishlists with that name.
+
+If both are given, `customer_id` is used and `name` is ignored. A query with no match returns `200 OK` with `[]`.
 
 ```bash
 curl -i http://localhost:8080/wishlists
+curl -i "http://localhost:8080/wishlists?customer_id=1"
+curl -i "http://localhost:8080/wishlists?name=Birthday"
 ```
+
+- `400 Bad Request`: `customer_id` is not an integer.
 
 ### POST /wishlists
 

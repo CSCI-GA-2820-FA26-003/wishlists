@@ -378,3 +378,60 @@ class TestWishlistService(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.mimetype, "application/json")
         self.assertEqual(resp.get_json(), [])
+
+    def test_query_wishlists_by_customer_id(self):
+        """It should return only the wishlists of the given customer"""
+        mine = WishlistFactory.create_batch(2, customer_id=1)
+        other = WishlistFactory(customer_id=2)
+        for wishlist in mine + [other]:
+            wishlist.create()
+
+        resp = self.client.get("/wishlists", query_string={"customer_id": 1})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertCountEqual(resp.get_json(), [wishlist.serialize() for wishlist in mine])
+
+    def test_query_wishlists_by_customer_id_no_match(self):
+        """It should return an empty list when the customer has no wishlists"""
+        WishlistFactory(customer_id=1).create()
+
+        resp = self.client.get("/wishlists", query_string={"customer_id": 99})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.get_json(), [])
+
+    def test_query_wishlists_by_name(self):
+        """It should return only the wishlists with the given name"""
+        WishlistFactory(name="Birthday", customer_id=1).create()
+        WishlistFactory(name="Birthday", customer_id=2).create()
+        WishlistFactory(name="Holiday", customer_id=1).create()
+
+        resp = self.client.get("/wishlists", query_string={"name": "Birthday"})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(len(data), 2)
+        for wishlist in data:
+            self.assertEqual(wishlist["name"], "Birthday")
+
+    def test_query_wishlists_customer_id_wins_over_name(self):
+        """It should filter by customer_id and ignore name when both are given"""
+        WishlistFactory(name="Birthday", customer_id=1).create()
+        WishlistFactory(name="Holiday", customer_id=1).create()
+        WishlistFactory(name="Birthday", customer_id=2).create()
+
+        resp = self.client.get("/wishlists", query_string={"customer_id": 1, "name": "Birthday"})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(len(data), 2)
+        for wishlist in data:
+            self.assertEqual(wishlist["customer_id"], 1)
+
+    def test_query_wishlists_bad_customer_id(self):
+        """It should return a JSON 400 when customer_id is not an integer"""
+        for bad_value in ["abc", "1.5", ""]:
+            resp = self.client.get("/wishlists", query_string={"customer_id": bad_value})
+
+            self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(resp.mimetype, "application/json")

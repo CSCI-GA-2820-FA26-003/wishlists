@@ -32,6 +32,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y git gnupg
+
       - name: Install Python package dependencies
         run: |
           python -m pip install --upgrade pip pipenv
@@ -44,6 +49,11 @@ jobs:
           pylint service tests --max-line-length=127
 
       - name: Run unit tests with pytest
-        run: pytest --pspec --cov=service --cov-fail-under=95 --disable-warnings
+        run: pytest --pspec --cov=service --cov-report=xml --cov-fail-under=95 --disable-warnings
         env:
           DATABASE_URI: "postgresql+psycopg://postgres:pgs3cr3t@postgres:5432/testdb"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

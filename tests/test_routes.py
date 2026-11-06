@@ -71,14 +71,11 @@ class TestWishlistService(TestCase):
     ######################################################################
 
     def test_index(self):
-        """It should return service information from the home page"""
+        """It should serve the admin web page from the home page"""
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(resp.content_type, "application/json")
-        data = resp.get_json()
-        self.assertEqual(data["name"], "Wishlists Service")
-        self.assertEqual(data["version"], app.config["VERSION"])
-        self.assertEqual(data["list_url"], "/wishlists")
+        self.assertIn("text/html", resp.content_type)
+        self.assertIn(b"Wishlist Admin", resp.data)
 
     def test_health(self):
         """It should report application health as JSON."""

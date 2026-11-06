@@ -31,7 +31,7 @@ The setup installs the Python dependencies and starts PostgreSQL in a separate c
 honcho start
 ```
 
-Open <http://localhost:8080/>. The root URL returns the service name, version, and the path of the wishlist collection. If VS Code forwards a different local port, use the address in the Ports tab. Stop the server with `Ctrl+C`.
+Open <http://localhost:8080/>. The root URL opens the administration web page, which calls the REST API described below. The API itself starts at `/wishlists`. If VS Code forwards a different local port, use the address in the Ports tab. Stop the server with `Ctrl+C`.
 
 ## Tests and Code Checks
 
@@ -51,13 +51,31 @@ make lint
 
 This runs Flake8 and Pylint. Check the output for errors and warnings, even if the command finishes.
 
+## BDD Tests
+
+The `features/` folder holds Behavior Driven Development tests written in Gherkin and run with behave. They drive the web interface with Selenium in a headless Chrome browser, so the service must be running first. The `Background` of the feature loads known test data through the REST API, the same approach as the course's lab-flask-bdd.
+
+In one terminal start the service:
+
+```bash
+honcho start
+```
+
+In a second terminal run the scenarios:
+
+```bash
+make bdd
+```
+
+behave reads `BASE_URL` (default `http://localhost:8080`) to find the service, so the same scenarios can run against a deployed instance by pointing it at that address.
+
 ## API
 
 Every response with a body is JSON; successful `DELETE` requests return `204 No Content` with an empty body. `POST` and `PUT` requests must send `Content-Type: application/json`.
 
 | Method | Path | Purpose | Success |
 | --- | --- | --- | --- |
-| GET | `/` | Service information | `200 OK` |
+| GET | `/` | Administration web page (HTML) | `200 OK` |
 | GET | `/health` | Application health: `{"status": "OK"}` | `200 OK` |
 | GET | `/wishlists` | List wishlists, optionally filtered by `customer_id` or `name` | `200 OK` |
 | POST | `/wishlists` | Create a wishlist | `201 Created` + `Location` header |
@@ -93,7 +111,7 @@ Every response with a body is JSON; successful `DELETE` requests return `204 No 
 
 ### GET /
 
-Returns `{"list_url": "/wishlists", "name": "Wishlists Service", "version": "1.0.0"}`.
+Returns the administration web page as HTML, not JSON. Every other endpoint returns JSON.
 
 ### GET /wishlists
 
@@ -230,6 +248,7 @@ Every error is returned as JSON in this format, never as HTML:
 | `service/routes.py` | API routes |
 | `service/common/` | Error handlers, logging, status codes and CLI commands |
 | `tests/` | Model and API tests, test data factories |
+| `features/` | BDD scenarios in Gherkin and the Selenium step definitions |
 | `.devcontainer/` | Development container and PostgreSQL configuration |
 | `Makefile` | Development commands |
 

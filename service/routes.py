@@ -32,16 +32,9 @@ from service.common import status  # HTTP Status Codes
 ######################################################################
 @app.route("/")
 def index():
-    """Root URL response"""
-    app.logger.info("Request for Root URL")
-    return (
-        jsonify(
-            name="Wishlists Service",
-            version=app.config["VERSION"],
-            list_url="/wishlists",
-        ),
-        status.HTTP_200_OK,
-    )
+    """Serve the administration web page"""
+    app.logger.info("Request for the admin page")
+    return app.send_static_file("index.html")
 
 
 ######################################################################

@@ -102,3 +102,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+.venv/
+
+# BDD screenshots
+captures/*.png

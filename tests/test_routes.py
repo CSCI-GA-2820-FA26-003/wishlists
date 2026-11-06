@@ -22,6 +22,7 @@ Wishlist API Service Test Suite
 import os
 import logging
 from unittest import TestCase
+from unittest.mock import patch
 from wsgi import app
 from service.common import status
 from service.models import db, Wishlist, Item
@@ -78,6 +79,29 @@ class TestWishlistService(TestCase):
         self.assertEqual(data["name"], "Wishlists Service")
         self.assertEqual(data["version"], app.config["VERSION"])
         self.assertEqual(data["list_url"], "/wishlists")
+
+    def test_health(self):
+        """It should report application health as JSON."""
+        resp = self.client.get("/health", headers={"Content-Type": "application/json"})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.content_type, "application/json")
+        self.assertEqual(resp.get_json(), {"status": "OK"})
+
+    def test_health_without_content_type(self):
+        """It should report application health without a Content-Type header."""
+        resp = self.client.get("/health")
+        self.assertNotIn("Content-Type", resp.request.headers)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.content_type, "application/json")
+        self.assertEqual(resp.get_json(), {"status": "OK"})
+
+    def test_health_without_database(self):
+        """It should report application health without accessing the database."""
+        with patch.object(db.engine, "connect", side_effect=AssertionError("Database accessed")) as connect:
+            resp = self.client.get("/health")
+        connect.assert_not_called()
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.get_json(), {"status": "OK"})
 
     def test_create_wishlist(self):
         """It should save a new empty wishlist."""

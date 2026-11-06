@@ -45,6 +45,16 @@ def index():
 
 
 ######################################################################
+# GET HEALTH
+######################################################################
+@app.route("/health", methods=["GET"])
+def health():
+    """Report that the Flask application is responding."""
+    app.logger.info("Request for health check")
+    return jsonify(status="OK"), status.HTTP_200_OK
+
+
+######################################################################
 #  U T I L I T Y   F U N C T I O N S
 ######################################################################
 def check_content_type(content_type):

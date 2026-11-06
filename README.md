@@ -58,6 +58,7 @@ Every response with a body is JSON; successful `DELETE` requests return `204 No 
 | Method | Path | Purpose | Success |
 | --- | --- | --- | --- |
 | GET | `/` | Service information | `200 OK` |
+| GET | `/health` | Application health: `{"status": "OK"}` | `200 OK` |
 | GET | `/wishlists` | List wishlists, optionally filtered by `customer_id` or `name` | `200 OK` |
 | POST | `/wishlists` | Create a wishlist | `201 Created` + `Location` header |
 | GET | `/wishlists/{id}` | Read one wishlist with its items | `200 OK` |

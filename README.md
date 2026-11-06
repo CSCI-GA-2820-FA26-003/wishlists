@@ -31,7 +31,7 @@ The setup installs the Python dependencies and starts PostgreSQL in a separate c
 honcho start
 ```
 
-Open <http://localhost:8080/>. The root URL returns the service name, version, and the path of the wishlist collection. If VS Code forwards a different local port, use the address in the Ports tab. Stop the server with `Ctrl+C`.
+Open <http://localhost:8080/>. The root URL opens the administration web page, which calls the REST API described below. The API itself starts at `/wishlists`. If VS Code forwards a different local port, use the address in the Ports tab. Stop the server with `Ctrl+C`.
 
 ## Tests and Code Checks
 
@@ -75,7 +75,7 @@ Every response with a body is JSON; successful `DELETE` requests return `204 No 
 
 | Method | Path | Purpose | Success |
 | --- | --- | --- | --- |
-| GET | `/` | Service information | `200 OK` |
+| GET | `/` | Administration web page (HTML) | `200 OK` |
 | GET | `/health` | Application health: `{"status": "OK"}` | `200 OK` |
 | GET | `/wishlists` | List wishlists, optionally filtered by `customer_id` or `name` | `200 OK` |
 | POST | `/wishlists` | Create a wishlist | `201 Created` + `Location` header |
@@ -111,7 +111,7 @@ Every response with a body is JSON; successful `DELETE` requests return `204 No 
 
 ### GET /
 
-Returns `{"list_url": "/wishlists", "name": "Wishlists Service", "version": "1.0.0"}`.
+Returns the administration web page as HTML, not JSON. Every other endpoint returns JSON.
 
 ### GET /wishlists
 

@@ -149,7 +149,7 @@ class TestErrorHandlers(TestCase):
                 "service.routes.jsonify",
                 side_effect=RuntimeError("secret database password"),
             ):
-                resp = self.client.get("/")
+                resp = self.client.get("/health")
         data = self.assert_json_error(
             resp, status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal Server Error"
         )

@@ -125,13 +125,14 @@ def step_impl(context: Any, element_name: str) -> None:
 # The buttons have an id in the html hat is the button text
 # in lowercase followed by '-btn' so the Clear button has an id of
 # id='clear-btn'. That allows us to lowercase the name and add '-btn'
-# to get the element id of any button
+# to get the element id of any button. Spaces become hyphens,
+# so the Add Item button has an id of add-item-btn
 ##################################################################
 
 
 @when('I press the "{button}" button')
 def step_impl(context: Any, button: str) -> None:
-    button_id = button.lower().replace(" ", "_") + "-btn"
+    button_id = button.lower().replace(" ", "-") + "-btn"
     context.driver.find_element(By.ID, button_id).click()
 
 

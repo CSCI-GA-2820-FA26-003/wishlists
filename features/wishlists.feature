@@ -10,6 +10,7 @@ Background:
         | Christmas | 1           |
         | Wedding   | 2           |
 
-Scenario: The service is reachable from the browser
+Scenario: An administrator opens the wishlist management page
     When I visit the "Home Page"
-    Then I should not see "404 Not Found"
+    Then I should see "Wishlist Admin" in the title
+    And I should not see "404 Not Found"

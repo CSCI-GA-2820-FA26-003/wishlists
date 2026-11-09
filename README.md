@@ -51,6 +51,24 @@ make lint
 
 This runs Flake8 and Pylint. Check the output for errors and warnings, even if the command finishes.
 
+## BDD Tests
+
+The `features/` folder holds Behavior Driven Development tests written in Gherkin and run with behave. They drive the web interface with Selenium in a headless Chrome browser, so the service must be running first. The `Background` of the feature loads known test data through the REST API, the same approach as the course's lab-flask-bdd.
+
+In one terminal start the service:
+
+```bash
+honcho start
+```
+
+In a second terminal run the scenarios:
+
+```bash
+make bdd
+```
+
+behave reads `BASE_URL` (default `http://localhost:8080`) to find the service, so the same scenarios can run against a deployed instance by pointing it at that address.
+
 ## API
 
 Every response with a body is JSON; successful `DELETE` requests return `204 No Content` with an empty body. `POST` and `PUT` requests must send `Content-Type: application/json`.
@@ -230,6 +248,7 @@ Every error is returned as JSON in this format, never as HTML:
 | `service/routes.py` | API routes |
 | `service/common/` | Error handlers, logging, status codes and CLI commands |
 | `tests/` | Model and API tests, test data factories |
+| `features/` | BDD scenarios in Gherkin and the Selenium step definitions |
 | `.devcontainer/` | Development container and PostgreSQL configuration |
 | `Makefile` | Development commands |
 

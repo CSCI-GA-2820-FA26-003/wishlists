@@ -21,6 +21,14 @@ $(function () {
         $("#wishlist_customer_id").val("");
     }
 
+    // Reads the Customer Id field. A whole number is sent as a number, which
+    // is what the API expects. Anything else is sent unchanged, so the service
+    // rejects it with its own message instead of the page guessing a value.
+    function read_customer_id() {
+        let text = $("#wishlist_customer_id").val().trim();
+        return /^-?\d+$/.test(text) ? parseInt(text, 10) : text;
+    }
+
     // Updates the flash message area
     function flash_message(message) {
         $("#flash_message").empty();
@@ -37,7 +45,38 @@ $(function () {
     // Update a Wishlist
     // ****************************************
 
-    // (added by the Update story)
+    $("#update-btn").click(function () {
+
+        let wishlist_id = $("#wishlist_id").val();
+        let name = $("#wishlist_name").val();
+        let customer_id = read_customer_id();
+
+        // Items are managed through their own endpoints, so only the
+        // wishlist's own fields are sent
+        let data = {
+            "name": name,
+            "customer_id": customer_id
+        };
+
+        $("#flash_message").empty();
+
+        let ajax = $.ajax({
+            type: "PUT",
+            url: `${BASE_URL}/${wishlist_id}`,
+            contentType: "application/json",
+            data: JSON.stringify(data)
+        })
+
+        ajax.done(function(res){
+            update_form_data(res)
+            flash_message("Success")
+        });
+
+        ajax.fail(function(res){
+            flash_message(res.responseJSON.message)
+        });
+
+    });
 
     // ****************************************
     // Retrieve a Wishlist

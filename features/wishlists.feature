@@ -30,3 +30,17 @@ Scenario: Read a wishlist that does not exist
     And I press the "Retrieve" button
     Then I should see the message "was not found"
     And I should see "Untouched" in the "Name" field
+
+Scenario: Update a wishlist
+    When I visit the "Home Page"
+    And I set the "Id" to the id of the "Birthday" wishlist
+    And I press the "Retrieve" button
+    Then I should see "Birthday" in the "Name" field
+    When I change "Name" to "Birthday Party"
+    And I press the "Update" button
+    Then I should see the message "Success"
+    When I copy the "Id" field
+    And I press the "Clear" button
+    And I paste the "Id" field
+    And I press the "Retrieve" button
+    Then I should see "Birthday Party" in the "Name" field

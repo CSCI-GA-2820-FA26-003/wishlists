@@ -43,7 +43,30 @@ $(function () {
     // Retrieve a Wishlist
     // ****************************************
 
-    // (added by the Read story)
+    $("#retrieve-btn").click(function () {
+
+        let wishlist_id = $("#wishlist_id").val();
+
+        $("#flash_message").empty();
+
+        let ajax = $.ajax({
+            type: "GET",
+            url: `${BASE_URL}/${wishlist_id}`,
+            contentType: "application/json",
+            data: ''
+        })
+
+        ajax.done(function(res){
+            update_form_data(res)
+            flash_message("Success")
+        });
+
+        // On a 404 the service's own message is shown and the form is left as it was
+        ajax.fail(function(res){
+            flash_message(res.responseJSON.message)
+        });
+
+    });
 
     // ****************************************
     // Delete a Wishlist

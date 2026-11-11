@@ -73,7 +73,8 @@ behave reads `BASE_URL` (default `http://localhost:8080`) to find the service, s
 
 Enter a Wishlist ID and click **Retrieve** to see its first item. To add another
 item, enter a product ID and an optional note, then click **Add Item**. The
-page shows the new item ID and its purchased status. **Clear** resets both
+page shows the new item ID and its purchased status. Click **Purchase** to
+mark the displayed item as purchased. **Clear** resets both
 the wishlist and item fields.
 
 ## API

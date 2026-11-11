@@ -1,6 +1,6 @@
-Feature: Add items from the wishlist admin page
+Feature: Manage items from the wishlist admin page
     As an eCommerce manager
-    I need to add products to a customer's wishlist
+    I need to add products to a customer's wishlist and mark them as purchased
     So that I can maintain its items from the page
 
 Background:
@@ -107,3 +107,40 @@ Scenario: Retrieve the first item and clear it for an empty wishlist
     And the "Item Product Id" field should be empty
     And the "Item Note" field should be empty
     And the "Item Purchased" field should be empty
+
+Scenario: Mark a wishlist item as purchased
+    Given the following items
+        | wishlist | product_id | note    |
+        | Birthday | 456        | red one |
+    When I visit the "Home Page"
+    And I set the "Id" to the id of the "Birthday" wishlist
+    And I press the "Retrieve" button
+    Then I should see the message "Success"
+    And I should see "456" in the "Item Product Id" field
+    And I should see "false" in the "Item Purchased" field
+    When I press the "Purchase" button
+    Then I should see the message "Success"
+    And I should see "true" in the "Item Purchased" field
+    When I copy the "Id" field
+    And I press the "Clear" button
+    Then the "Item Purchased" field should be empty
+    When I paste the "Id" field
+    And I press the "Retrieve" button
+    Then I should see "456" in the "Item Product Id" field
+    And I should see "true" in the "Item Purchased" field
+
+Scenario: An item cannot be purchased through another wishlist
+    Given the following items
+        | wishlist | product_id | note    |
+        | Birthday | 456        | red one |
+    When I visit the "Home Page"
+    And I set the "Id" to the id of the "Birthday" wishlist
+    And I press the "Retrieve" button
+    Then I should see "false" in the "Item Purchased" field
+    When I set the "Id" to the id of the "Christmas" wishlist
+    And I press the "Purchase" button
+    Then I should see the message "was not found in this wishlist"
+    When I press the "Clear" button
+    And I set the "Id" to the id of the "Birthday" wishlist
+    And I press the "Retrieve" button
+    Then I should see "false" in the "Item Purchased" field

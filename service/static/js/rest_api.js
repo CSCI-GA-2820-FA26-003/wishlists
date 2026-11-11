@@ -176,6 +176,36 @@ $(function () {
         });
     });
 
-    // (Purchase is added by the Purchase story)
+    $("#purchase-btn").click(function () {
+        const wishlist_id = $("#wishlist_id").val().trim();
+        const item_id = $("#wishlist_item_id").val().trim();
+        if (!/^\d+$/.test(wishlist_id) || !/^\d+$/.test(item_id)) {
+            flash_message("Enter a wishlist ID and an item ID to mark an item as purchased.");
+            return;
+        }
+
+        function same_item() {
+            return $("#wishlist_id").val().trim() === wishlist_id &&
+                $("#wishlist_item_id").val().trim() === item_id;
+        }
+
+        $("#purchase-btn").prop("disabled", true);
+        flash_message("");
+        $.ajax({
+            type: "PUT",
+            url: `${BASE_URL}/${wishlist_id}/items/${item_id}/purchase`
+        }).done(function (item) {
+            if (same_item()) {
+                update_item_data(item);
+                flash_message("Success");
+            }
+        }).fail(function (res) {
+            if (same_item()) {
+                flash_message(res.responseJSON?.message || "Could not mark the item as purchased.");
+            }
+        }).always(function () {
+            $("#purchase-btn").prop("disabled", false);
+        });
+    });
 
 })

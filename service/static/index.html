@@ -70,6 +70,41 @@
         </div> <!-- end well -->
       </div> <!-- end Form -->
 
+      <div class="col-md-12" id="item_form">
+        <h3>Wishlist Item:</h3>
+        <div class="well form-horizontal">
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="wishlist_item_id">Item Id:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="wishlist_item_id">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="wishlist_item_product_id">Item Product Id:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="wishlist_item_product_id" placeholder="Enter product ID">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="wishlist_item_note">Item Note:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="wishlist_item_note" maxlength="255" placeholder="Optional note">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="wishlist_item_purchased">Item Purchased:</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="wishlist_item_purchased" readonly>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+              <button type="button" class="btn btn-success" id="add-item-btn">Add Item</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Search Results -->
       <div class="table-responsive col-md-12" id="search_results">
         <table class="table table-striped">

@@ -122,7 +122,7 @@ Returns the administration web page as HTML, not JSON. Every other endpoint retu
 
 ### GET /wishlists
 
-Returns a JSON array of wishlists, each in the format above. Returns `[]` when there are none.
+Returns a JSON array of wishlists ordered by id, each in the format above. Returns `[]` when there are none.
 
 Optional query parameters:
 
@@ -160,7 +160,7 @@ Returns `201 Created` with the new wishlist in the body and a `Location` header 
 curl -i http://localhost:8080/wishlists/7
 ```
 
-Returns `200 OK` with the wishlist and its items.
+Returns `200 OK` with the wishlist and its items, ordered by item id.
 
 - `404 Not Found`: no wishlist with that id.
 
@@ -215,7 +215,7 @@ curl -i -X PUT http://localhost:8080/wishlists/$WISHLIST_ID/items/$ITEM_ID \
 curl -i -X DELETE http://localhost:8080/wishlists/$WISHLIST_ID/items/$ITEM_ID
 ```
 
-Read and update return the item JSON. List returns an array, or `[]` for an empty wishlist. `PUT` requires `product_id`; omitting `note` clears it. Deleting an item leaves its wishlist and the other items unchanged.
+Read and update return the item JSON. List returns an array ordered by item id, or `[]` for an empty wishlist. `PUT` requires `product_id`; omitting `note` clears it. Deleting an item leaves its wishlist and the other items unchanged.
 
 - `400`: invalid JSON or missing/invalid item fields on create or update, including a `note` longer than 255 characters.
 - `415`: create or update request without `Content-Type: application/json`.

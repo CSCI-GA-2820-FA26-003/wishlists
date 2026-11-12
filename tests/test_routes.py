@@ -392,6 +392,21 @@ class TestWishlistService(TestCase):
         self.assertIsInstance(data, list)
         self.assertCountEqual(data, [wishlist.serialize() for wishlist in wishlists])
 
+    def test_list_wishlists_keeps_id_order(self):
+        """It should return all wishlists in id order after the first one is updated"""
+        ids = []
+        for _ in range(2):
+            wishlist = WishlistFactory()
+            wishlist.create()
+            ids.append(wishlist.id)
+        resp = self.client.put(f"/wishlists/{ids[0]}", json={"name": "Updated name", "customer_id": 1})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        resp = self.client.get("/wishlists")
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual([wishlist["id"] for wishlist in resp.get_json()], ids)
+
     def test_list_wishlists_empty(self):
         """It should return an empty JSON array when no wishlists exist"""
         resp = self.client.get("/wishlists")

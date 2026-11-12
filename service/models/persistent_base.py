@@ -90,10 +90,10 @@ class PersistentBase:
 
     @classmethod
     def all(cls):
-        """Returns all of the records in the database"""
+        """Returns all of the records in the database ordered by id"""
         logger.info("Processing all records")
         # pylint: disable=no-member
-        return cls.query.all()
+        return cls.query.order_by(cls.id).all()
 
     @classmethod
     def find(cls, by_id):

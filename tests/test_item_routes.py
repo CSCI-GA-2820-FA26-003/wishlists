@@ -234,6 +234,24 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(response.status_code, 200)
         self.assertCountEqual(response.get_json(), [item.serialize() for item in items])
 
+    def test_list_items_keeps_id_order(self):
+        """It should keep items in id order after the first one is purchased."""
+        wishlist_url = f"/wishlists/{self.wishlist.id}"
+        ids = []
+        for _ in range(2):
+            item = ItemFactory(wishlist=self.wishlist)
+            item.create()
+            ids.append(item.id)
+        response = self.client.put(f"{self.url}/{ids[0]}/purchase")
+        self.assertEqual(response.status_code, 200)
+        db.session.remove()
+        listed = self.client.get(self.url).get_json()
+        self.assertEqual([item["id"] for item in listed], ids)
+        self.assertTrue(listed[0]["purchased"])
+        # the admin page shows the first item of this array
+        wishlist = self.client.get(wishlist_url).get_json()
+        self.assertEqual([item["id"] for item in wishlist["items"]], ids)
+
     def test_list_items_empty(self):
         """It should return an empty list for an empty wishlist."""
         response = self.client.get(self.url)

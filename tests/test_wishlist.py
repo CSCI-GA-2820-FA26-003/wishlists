@@ -93,6 +93,31 @@ class TestWishlist(TestCase):
             WishlistFactory().create()
         self.assertEqual(len(Wishlist.all()), 5)
 
+    def test_list_all_wishlists_keeps_id_order(self):
+        """It should List all Wishlists in id order after one is updated"""
+        first = WishlistFactory()
+        first.create()
+        second = WishlistFactory()
+        second.create()
+        # PostgreSQL moves a row when it is updated, so without an ORDER BY
+        # the updated Wishlist would now come back last
+        first.name = "Updated name"
+        first.update()
+        self.assertEqual([wishlist.id for wishlist in Wishlist.all()], [first.id, second.id])
+
+    def test_items_keep_id_order(self):
+        """It should keep the Items of a Wishlist in id order after one is updated"""
+        wishlist = WishlistFactory()
+        ItemFactory(wishlist=wishlist)
+        ItemFactory(wishlist=wishlist)
+        wishlist.create()
+        first, second = sorted(wishlist.items, key=lambda item: item.id)
+        first.purchased = True
+        first.update()
+        found = Wishlist.find(wishlist.id)
+        self.assertEqual([item.id for item in found.items], [first.id, second.id])
+        self.assertEqual([item["id"] for item in found.serialize()["items"]], [first.id, second.id])
+
     def test_update_a_wishlist(self):
         """It should Update a Wishlist"""
         wishlist = WishlistFactory()

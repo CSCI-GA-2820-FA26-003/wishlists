@@ -39,8 +39,14 @@ class Wishlist(db.Model, PersistentBase):
     name = db.Column(db.String(NAME_MAX_LENGTH), nullable=False)
     customer_id = db.Column(db.Integer, nullable=False)
     # delete-orphan: deleting a Wishlist (or removing an Item from .items) deletes the Item
+    # order_by: PostgreSQL moves a row when it is updated, so without it a
+    # purchased Item would jump to the end of the list
     items = db.relationship(
-        "Item", backref="wishlist", cascade="all, delete-orphan", passive_deletes=True
+        "Item",
+        backref="wishlist",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Item.id",
     )
 
     def __repr__(self):

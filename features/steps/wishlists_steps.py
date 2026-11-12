@@ -67,3 +67,17 @@ def set_id_of_wishlist(context, name):
     element = context.driver.find_element(By.ID, "wishlist_id")
     element.clear()
     element.send_keys(str(context.wishlist_ids[name]))
+
+
+@given("the following items")
+def load_items(context):
+    """Load items into the wishlists created by the Background."""
+    for row in context.table:
+        wishlist_id = context.wishlist_ids[row["wishlist"]]
+        payload = {"product_id": int(row["product_id"]), "note": row["note"]}
+        response = requests.post(
+            f"{context.base_url}/wishlists/{wishlist_id}/items",
+            json=payload,
+            timeout=WAIT_TIMEOUT,
+        )
+        expect(response.status_code).equal_to(HTTP_201_CREATED)

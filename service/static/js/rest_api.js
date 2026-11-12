@@ -13,12 +13,21 @@ $(function () {
         $("#wishlist_id").val(res.id);
         $("#wishlist_name").val(res.name);
         $("#wishlist_customer_id").val(res.customer_id);
+        update_item_data(res.items && res.items.length ? res.items[0] : null);
+    }
+
+    function update_item_data(item) {
+        $("#wishlist_item_id").val(item ? item.id : "");
+        $("#wishlist_item_product_id").val(item ? item.product_id : "");
+        $("#wishlist_item_note").val(item ? item.note : "");
+        $("#wishlist_item_purchased").val(item ? String(item.purchased) : "");
     }
 
     // Clears all form fields
     function clear_form_data() {
         $("#wishlist_name").val("");
         $("#wishlist_customer_id").val("");
+        update_item_data(null);
     }
 
     // Reads the Customer Id field. A whole number is sent as a number, which
@@ -32,7 +41,7 @@ $(function () {
     // Updates the flash message area
     function flash_message(message) {
         $("#flash_message").empty();
-        $("#flash_message").append(message);
+        $("#flash_message").text(message);
     }
 
     // ****************************************
@@ -133,6 +142,40 @@ $(function () {
     // Wishlist Items
     // ****************************************
 
-    // (added by the Add Item and Purchase stories)
+    $("#add-item-btn").click(function () {
+        const wishlist_id = $("#wishlist_id").val().trim();
+        const product_id = $("#wishlist_item_product_id").val().trim();
+
+        if (!/^\d+$/.test(wishlist_id) || !Number.isSafeInteger(Number(wishlist_id))) {
+            flash_message("Enter a wishlist ID before adding an item.");
+            return;
+        }
+        if (!/^-?\d+$/.test(product_id) || !Number.isSafeInteger(Number(product_id))) {
+            flash_message("Product ID must be an integer.");
+            return;
+        }
+
+        $("#add-item-btn").prop("disabled", true);
+        flash_message("");
+        $.ajax({
+            type: "POST",
+            url: BASE_URL + "/" + wishlist_id + "/items",
+            contentType: "application/json",
+            data: JSON.stringify({
+                product_id: Number(product_id),
+                note: $("#wishlist_item_note").val()
+            })
+        }).done(function (res) {
+            update_item_data(res);
+            flash_message("Success");
+        }).fail(function (res) {
+            const message = res.responseJSON && res.responseJSON.message;
+            flash_message(message || "Could not add the item. Please try again.");
+        }).always(function () {
+            $("#add-item-btn").prop("disabled", false);
+        });
+    });
+
+    // (Purchase is added by the Purchase story)
 
 })

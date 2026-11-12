@@ -69,6 +69,13 @@ make bdd
 
 behave reads `BASE_URL` (default `http://localhost:8080`) to find the service, so the same scenarios can run against a deployed instance by pointing it at that address.
 
+## Adding items from the admin page
+
+Enter a Wishlist ID and click **Retrieve** to see its first item. To add another
+item, enter a product ID and an optional note, then click **Add Item**. The
+page shows the new item ID and its purchased status. **Clear** resets both
+the wishlist and item fields.
+
 ## API
 
 Every response with a body is JSON; successful `DELETE` requests return `204 No Content` with an empty body. `POST` and `PUT` requests must send `Content-Type: application/json`.

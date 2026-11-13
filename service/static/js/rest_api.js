@@ -136,7 +136,56 @@ $(function () {
     // Search for Wishlists
     // ****************************************
 
-    // (added by the List and Query stories)
+    // Replaces the results table with one row per wishlist. Cells are filled
+    // with .text() so a name can never be read as HTML.
+    function show_search_results(wishlists) {
+        let table = $('<table class="table table-striped"></table>');
+        table.append(
+            '<thead><tr>' +
+            '<th class="col-md-2">ID</th>' +
+            '<th class="col-md-6">Name</th>' +
+            '<th class="col-md-4">Customer ID</th>' +
+            '</tr></thead>'
+        );
+        let body = $("<tbody></tbody>");
+        wishlists.forEach(function (wishlist, i) {
+            let row = $("<tr></tr>").attr("id", "row_" + i);
+            row.append($("<td></td>").text(wishlist.id));
+            row.append($("<td></td>").text(wishlist.name));
+            row.append($("<td></td>").text(wishlist.customer_id));
+            body.append(row);
+        });
+        table.append(body);
+        $("#search_results").empty().append(table);
+    }
+
+    // The Search button lists every wishlist
+    $("#search-btn").click(function () {
+
+        $("#flash_message").empty();
+
+        let ajax = $.ajax({
+            type: "GET",
+            url: BASE_URL,
+            contentType: "application/json",
+            data: ''
+        })
+
+        ajax.done(function(res){
+            show_search_results(res);
+            // Like the lab UI, the first result also fills the form
+            if (res.length > 0) {
+                update_form_data(res[0]);
+            }
+            flash_message("Success")
+        });
+
+        ajax.fail(function(res){
+            const message = res.responseJSON && res.responseJSON.message;
+            flash_message(message || "Could not search wishlists. Please try again.");
+        });
+
+    });
 
     // ****************************************
     // Wishlist Items

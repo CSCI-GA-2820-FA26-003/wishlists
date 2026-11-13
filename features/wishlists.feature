@@ -44,3 +44,12 @@ Scenario: Update a wishlist
     And I paste the "Id" field
     And I press the "Retrieve" button
     Then I should see "Birthday Party" in the "Name" field
+
+Scenario: List all wishlists
+    When I visit the "Home Page"
+    And I press the "Clear" button
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see "Birthday" in the results
+    And I should see "Christmas" in the results
+    And I should see "Wedding" in the results

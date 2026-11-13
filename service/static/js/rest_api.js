@@ -159,16 +159,28 @@ $(function () {
         $("#search_results").empty().append(table);
     }
 
-    // The Search button lists every wishlist
+    // The Search button lists one customer's wishlists when Customer Id is
+    // filled in, the wishlists with one name when only Name is filled in,
+    // and every wishlist when both are empty
     $("#search-btn").click(function () {
+
+        let customer_id = $("#wishlist_customer_id").val().trim();
+        let name = $("#wishlist_name").val().trim();
+
+        // Customer Id wins when both are filled in, the same as the API
+        let query = {};
+        if (customer_id) {
+            query.customer_id = customer_id;
+        } else if (name) {
+            query.name = name;
+        }
 
         $("#flash_message").empty();
 
         let ajax = $.ajax({
             type: "GET",
             url: BASE_URL,
-            contentType: "application/json",
-            data: ''
+            data: query
         })
 
         ajax.done(function(res){
@@ -180,7 +192,9 @@ $(function () {
             flash_message("Success")
         });
 
+        // An error clears the table so old results are not read as the answer
         ajax.fail(function(res){
+            show_search_results([]);
             const message = res.responseJSON && res.responseJSON.message;
             flash_message(message || "Could not search wishlists. Please try again.");
         });

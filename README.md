@@ -76,6 +76,12 @@ item, enter a product ID and an optional note, then click **Add Item**. The
 page shows the new item ID and its purchased status. **Clear** resets both
 the wishlist and item fields.
 
+## Searching from the admin page
+
+Click **Search** with an empty form to list every wishlist in the table.
+Enter a Customer ID first to list only that customer's wishlists, or only a
+Name to match that name exactly. A search with no match shows an empty table.
+
 ## API
 
 Every response with a body is JSON; successful `DELETE` requests return `204 No Content` with an empty body. `POST` and `PUT` requests must send `Content-Type: application/json`.

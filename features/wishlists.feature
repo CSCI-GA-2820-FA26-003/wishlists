@@ -53,3 +53,30 @@ Scenario: List all wishlists
     And I should see "Birthday" in the results
     And I should see "Christmas" in the results
     And I should see "Wedding" in the results
+
+Scenario: Query wishlists by customer
+    When I visit the "Home Page"
+    And I set the "Customer Id" to "1"
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see "Birthday" in the results
+    And I should see "Christmas" in the results
+    And I should not see "Wedding" in the results
+
+Scenario: Query wishlists by name
+    When I visit the "Home Page"
+    And I set the "Name" to "Wedding"
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see "Wedding" in the results
+    And I should not see "Birthday" in the results
+    And I should not see "Christmas" in the results
+
+Scenario: Query a customer who has no wishlists
+    When I visit the "Home Page"
+    And I set the "Customer Id" to "999"
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should not see "Birthday" in the results
+    And I should not see "Christmas" in the results
+    And I should not see "Wedding" in the results

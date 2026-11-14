@@ -145,7 +145,29 @@ $(function () {
     // Delete a Wishlist
     // ****************************************
 
-    // (added by the Delete story)
+    $("#delete-btn").click(function () {
+
+        let wishlist_id = $("#wishlist_id").val();
+
+        $("#flash_message").empty();
+
+        let ajax = $.ajax({
+            type: "DELETE",
+            url: `${BASE_URL}/${wishlist_id}`,
+            contentType: "application/json"
+        })
+
+        ajax.done(function(){
+            $("#wishlist_id").val("");
+            clear_form_data()
+            flash_message("Wishlist has been Deleted!")
+        });
+
+        ajax.fail(function(res){
+            flash_message(res.responseJSON.message)
+        });
+
+    });
 
     // ****************************************
     // Clear the form

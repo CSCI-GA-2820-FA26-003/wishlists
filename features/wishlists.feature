@@ -45,6 +45,50 @@ Scenario: Update a wishlist
     And I press the "Retrieve" button
     Then I should see "Birthday Party" in the "Name" field
 
+Scenario: Delete a wishlist
+    When I visit the "Home Page"
+    And I set the "Id" to the id of the "Wedding" wishlist
+    And I press the "Retrieve" button
+    Then I should see "Wedding" in the "Name" field
+    When I copy the "Id" field
+    And I press the "Delete" button
+    Then I should see the message "Wishlist has been Deleted!"
+    When I press the "Clear" button
+    And I paste the "Id" field
+    And I press the "Retrieve" button
+    Then I should see the message "was not found"
+
+Scenario: Deleting a wishlist clears the form
+    When I visit the "Home Page"
+    And I set the "Id" to the id of the "Wedding" wishlist
+    And I press the "Retrieve" button
+    Then I should see the message "Success"
+    When I press the "Delete" button
+    Then I should see the message "Wishlist has been Deleted!"
+    And the "Id" field should be empty
+    And the "Name" field should be empty
+    And the "Customer Id" field should be empty
+
+Scenario: Delete a wishlist that does not exist
+    When I visit the "Home Page"
+    And I set the "Id" to "0"
+    And I set the "Name" to "Old wishlist"
+    And I set the "Customer Id" to "3"
+    And I press the "Delete" button
+    Then I should see the message "Wishlist has been Deleted!"
+    And the "Id" field should be empty
+    And the "Name" field should be empty
+    And the "Customer Id" field should be empty
+
+Scenario: Deleting a wishlist with an invalid id preserves the form
+    When I visit the "Home Page"
+    And I set the "Id" to "abc"
+    And I set the "Name" to "Untouched"
+    And I press the "Delete" button
+    Then I should see the message "Not Found"
+    And I should see "abc" in the "Id" field
+    And I should see "Untouched" in the "Name" field
+
 Scenario: List all wishlists
     When I visit the "Home Page"
     And I press the "Clear" button

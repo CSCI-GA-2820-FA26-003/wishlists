@@ -48,7 +48,32 @@ $(function () {
     // Create a Wishlist
     // ****************************************
 
-    // (added by the Create story)
+    $("#create-btn").click(function () {
+
+        let data = {
+            "name": $("#wishlist_name").val(),
+            "customer_id": read_customer_id()
+        };
+
+        $("#flash_message").empty();
+
+        let ajax = $.ajax({
+            type: "POST",
+            url: BASE_URL,
+            contentType: "application/json",
+            data: JSON.stringify(data)
+        })
+
+        ajax.done(function(res){
+            update_form_data(res)
+            flash_message("Success")
+        });
+
+        ajax.fail(function(res){
+            flash_message(res.responseJSON.message)
+        });
+
+    });
 
     // ****************************************
     // Update a Wishlist

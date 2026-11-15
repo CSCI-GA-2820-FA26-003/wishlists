@@ -1,0 +1,13 @@
+.git
+.github
+.devcontainer
+.vscode
+.pytest_cache
+.coverage
+**/__pycache__
+venv
+tests
+features
+k8s
+config
+*.md

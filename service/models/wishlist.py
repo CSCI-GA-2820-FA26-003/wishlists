@@ -20,7 +20,7 @@ A Wishlist belongs to a customer and holds a collection of Items
 """
 
 import logging
-from .persistent_base import db, PersistentBase, DataValidationError
+from .persistent_base import db, PersistentBase, DataValidationError, in_integer_range
 from .item import Item
 
 logger = logging.getLogger("flask.app")
@@ -93,6 +93,10 @@ class Wishlist(db.Model, PersistentBase):
                 raise DataValidationError(
                     "Invalid Wishlist: customer_id must be an integer"
                 )
+            if not in_integer_range(customer_id):
+                raise DataValidationError(
+                    "Invalid Wishlist: customer_id is out of range"
+                )
             self.name = name
             self.customer_id = customer_id
             item_list = data.get("items") or []
@@ -127,6 +131,9 @@ class Wishlist(db.Model, PersistentBase):
             list: the matching Wishlists ordered by id, or [] if there are none
         """
         logger.info("Processing customer query for %s ...", customer_id)
+        # No Wishlist can belong to a customer id the column cannot hold
+        if not in_integer_range(customer_id):
+            return []
         # pylint: disable=no-member
         return cls.query.filter(cls.customer_id == customer_id).order_by(cls.id).all()
 
@@ -144,5 +151,8 @@ class Wishlist(db.Model, PersistentBase):
             list: the matching Wishlists ordered by id, or [] if there are none
         """
         logger.info("Processing name query for %s ...", name)
+        # A name with a NUL character can never be saved, so nothing has it
+        if "\x00" in name:
+            return []
         # pylint: disable=no-member
         return cls.query.filter(cls.name == name).order_by(cls.id).all()

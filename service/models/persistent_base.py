@@ -26,6 +26,24 @@ logger = logging.getLogger("flask.app")
 
 db = SQLAlchemy()
 
+# Range of a PostgreSQL INTEGER column, the type of every id in this service
+MIN_INTEGER = -2147483648
+MAX_INTEGER = 2147483647
+
+
+def in_integer_range(value: int) -> bool:
+    """Returns True when the value fits in a database INTEGER column"""
+    return MIN_INTEGER <= value <= MAX_INTEGER
+
+
+def database_reason(error: Exception) -> str:
+    """Returns why the database refused a record, without the SQL statement
+
+    SQLAlchemy puts the statement and its parameters in the text of its
+    errors and keeps the database's own message in the orig attribute.
+    """
+    return str(getattr(error, "orig", None) or error)
+
 
 class DataValidationError(Exception):
     """Used for an data validation errors when deserializing"""
@@ -61,7 +79,7 @@ class PersistentBase:
         except Exception as e:
             db.session.rollback()
             logger.error("Error creating record: %s", self)
-            raise DataValidationError(e) from e
+            raise DataValidationError(database_reason(e)) from e
 
     def update(self) -> None:
         """
@@ -75,7 +93,7 @@ class PersistentBase:
         except Exception as e:
             db.session.rollback()
             logger.error("Error updating record: %s", self)
-            raise DataValidationError(e) from e
+            raise DataValidationError(database_reason(e)) from e
 
     def delete(self) -> None:
         """Removes a Account from the data store"""
@@ -86,7 +104,7 @@ class PersistentBase:
         except Exception as e:
             db.session.rollback()
             logger.error("Error deleting record: %s", self)
-            raise DataValidationError(e) from e
+            raise DataValidationError(database_reason(e)) from e
 
     @classmethod
     def all(cls):
@@ -99,5 +117,9 @@ class PersistentBase:
     def find(cls, by_id):
         """Finds a record by it's ID"""
         logger.info("Processing lookup for id %s ...", by_id)
+        # No record can have an id the column cannot hold, and the database
+        # raises an error instead of finding nothing when it is asked for one
+        if not in_integer_range(by_id):
+            return None
         # pylint: disable=no-member
         return cls.query.session.get(cls, by_id)

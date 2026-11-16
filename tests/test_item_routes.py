@@ -6,6 +6,9 @@ from wsgi import app
 from service.models import db, Wishlist, Item
 from tests.factories import WishlistFactory, ItemFactory
 
+# One more than the largest value a PostgreSQL INTEGER column can hold
+TOO_BIG = 2147483648
+
 
 class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
     """Check item responses and changes saved in the database."""
@@ -187,6 +190,8 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
             {"product_id": 1.5},
             {"product_id": 10, "note": 123},
             {"product_id": 10, "note": "x" * 256},
+            {"product_id": TOO_BIG},
+            {"product_id": 10, "note": "red\x00one"},
         ):
             with self.subTest(data=data):
                 response = self.client.post(self.url, json=data)
@@ -373,6 +378,8 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
             {"product_id": 1.5},
             {"product_id": 10, "note": 123},
             {"product_id": 10, "note": "x" * 256},
+            {"product_id": TOO_BIG},
+            {"product_id": 10, "note": "red\x00one"},
         ):
             with self.subTest(data=data):
                 response = self.client.put(f"{self.url}/{original['id']}", json=data)
@@ -463,3 +470,29 @@ class TestItemRoutes(TestCase):  # pylint: disable=too-many-public-methods
             response = self.client.delete(url)
             self.assertEqual(response.status_code, 204)
             self.assertEqual(response.data, b"")
+
+    def test_ids_out_of_range(self):
+        """It should treat out of range ids as missing instead of failing."""
+        item = ItemFactory(wishlist=self.wishlist)
+        item.create()
+        item_id = item.id
+        expected = item.serialize()
+        body = {"product_id": 20}
+        cases = (
+            ("get", f"/wishlists/{TOO_BIG}/items", None, 404),
+            ("post", f"/wishlists/{TOO_BIG}/items", body, 404),
+            ("get", f"{self.url}/{TOO_BIG}", None, 404),
+            ("get", f"/wishlists/{TOO_BIG}/items/{item_id}", None, 404),
+            ("put", f"{self.url}/{TOO_BIG}", body, 404),
+            ("put", f"/wishlists/{TOO_BIG}/items/{item_id}", body, 404),
+            ("put", f"{self.url}/{TOO_BIG}/purchase", None, 404),
+            ("put", f"/wishlists/{TOO_BIG}/items/{item_id}/purchase", None, 404),
+            ("delete", f"{self.url}/{TOO_BIG}", None, 204),
+            ("delete", f"/wishlists/{TOO_BIG}/items/{item_id}", None, 404),
+        )
+        for method, url, json_body, expected_status in cases:
+            with self.subTest(method=method, url=url):
+                response = getattr(self.client, method)(url, json=json_body)
+                self.assertEqual(response.status_code, expected_status)
+                db.session.remove()
+                self.assertEqual(Item.find(item_id).serialize(), expected)

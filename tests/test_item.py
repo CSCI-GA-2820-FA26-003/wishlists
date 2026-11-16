@@ -29,6 +29,9 @@ DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
 
+# One more than the largest value a PostgreSQL INTEGER column can hold
+TOO_BIG = 2147483648
+
 
 ######################################################################
 #  I T E M   M O D E L   T E S T   C A S E S
@@ -258,3 +261,11 @@ class TestItem(TestCase):
         item.deserialize({"product_id": 456})
         self.assertRaises(DataValidationError, item.create)
         self.assertEqual(Item.all(), [])
+
+    def test_deserialize_product_id_out_of_range(self):
+        """It should not Deserialize an Item with an out of range product_id"""
+        item = Item()
+        for bad_id in [TOO_BIG, -TOO_BIG - 1, 99999999999999999999]:
+            self.assertRaises(
+                DataValidationError, item.deserialize, {"product_id": bad_id}
+            )

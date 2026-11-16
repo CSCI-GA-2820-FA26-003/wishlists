@@ -33,6 +33,38 @@ honcho start
 
 Open <http://localhost:8080/>. The root URL opens the administration web page, which calls the REST API described below. The API itself starts at `/wishlists`. If VS Code forwards a different local port, use the address in the Ports tab. Stop the server with `Ctrl+C`.
 
+## Running in Kubernetes
+
+The service and its PostgreSQL database can also run on a local K3D cluster inside the development container. Stop `honcho` first, because the cluster's load balancer also uses port 8080.
+
+```bash
+make cluster   # create the nyu-devops cluster with a registry at cluster-registry:5000
+make build     # build the cluster-registry:5000/wishlists:1.0 image from the Dockerfile
+make push      # push the image to the cluster registry
+make deploy    # apply everything in k8s/
+```
+
+Wait until both pods are `Running`:
+
+```bash
+kubectl get pods
+```
+
+The service is then reachable through the ingress at <http://localhost:8080/>:
+
+```bash
+curl -i http://localhost:8080/health
+curl -i http://localhost:8080/wishlists
+```
+
+`k8s/postgres/` runs PostgreSQL as a StatefulSet with a persistent volume, and its `postgres-creds` Secret holds the `DATABASE_URI` the service reads. The service waits for the database before it starts, and Kubernetes checks it through `/health`. Remove the cluster with `make cluster-rm`.
+
+If `make push` cannot find `cluster-registry`, the development container has lost its hosts entry after a restart. Add it again with:
+
+```bash
+sudo bash -c "echo '127.0.0.1    cluster-registry' >> /etc/hosts"
+```
+
 ## Tests and Code Checks
 
 Run all tests:
@@ -264,6 +296,8 @@ Every error is returned as JSON in this format, never as HTML:
 | `tests/` | Model and API tests, test data factories |
 | `features/` | BDD scenarios in Gherkin and the Selenium step definitions |
 | `.devcontainer/` | Development container and PostgreSQL configuration |
+| `Dockerfile` | Production image for the service |
+| `k8s/` | Kubernetes manifests for the service, with PostgreSQL in `k8s/postgres/` |
 | `Makefile` | Development commands |
 
 ## License

@@ -1,0 +1,11 @@
+.git
+.github
+.vscode
+.pytest_cache
+.coverage
+**/__pycache__
+venv
+tests
+features
+k8s
+*.md

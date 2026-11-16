@@ -1,6 +1,5 @@
 .git
 .github
-.devcontainer
 .vscode
 .pytest_cache
 .coverage
@@ -9,5 +8,4 @@ venv
 tests
 features
 k8s
-config
 *.md

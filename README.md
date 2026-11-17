@@ -286,7 +286,7 @@ Every error is returned as JSON in this format, never as HTML:
 
 `405 Method Not Allowed` responses include an `Allow` header listing the supported methods. `500 Internal Server Error` responses return a generic message; details are only written to the log.
 
-A number too large for the database's 32-bit integer columns is not a server error. Such an id in the URL is treated as a record that does not exist, such a `customer_id` filter matches nothing, and such a `customer_id` or `product_id` in a body returns `400`. A `400` message never includes the SQL statement.
+A number too large for the database's 32-bit integer columns is not a server error. Such an id in the URL is treated as a record that does not exist, such a `customer_id` filter matches nothing, and such a `customer_id` or `product_id` in a body returns `400`. When the database itself refuses a record, the `400` message is only `The record could not be saved` or `The record could not be deleted`, and the database's own error goes to the service log.
 
 ## Project Layout
 

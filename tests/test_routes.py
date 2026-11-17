@@ -531,3 +531,11 @@ class TestWishlistService(TestCase):
         resp = self.client.get("/wishlists", query_string={"name": "Birth\x00day"})
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.get_json(), [])
+
+    def test_create_wishlist_database_error_hides_the_details(self):
+        """It should not show the database's own error when it refuses a value."""
+        data = {"name": "Birth\x00day", "customer_id": 123}
+        resp = self.client.post("/wishlists", json=data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.get_json()["message"], "The record could not be saved")
+        self.assertEqual(len(Wishlist.all()), 0)

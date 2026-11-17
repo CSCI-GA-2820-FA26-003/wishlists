@@ -301,21 +301,27 @@ class TestWishlist(TestCase):
         """It should raise DataValidationError when the database fails on create"""
         wishlist = WishlistFactory()
         with patch.object(db.session, "commit", side_effect=Exception("db is down")):
-            self.assertRaises(DataValidationError, wishlist.create)
+            with self.assertRaises(DataValidationError) as context:
+                wishlist.create()
+        self.assertEqual(str(context.exception), "The record could not be saved")
 
     def test_update_database_error(self):
         """It should raise DataValidationError when the database fails on update"""
         wishlist = WishlistFactory()
         wishlist.create()
         with patch.object(db.session, "commit", side_effect=Exception("db is down")):
-            self.assertRaises(DataValidationError, wishlist.update)
+            with self.assertRaises(DataValidationError) as context:
+                wishlist.update()
+        self.assertEqual(str(context.exception), "The record could not be saved")
 
     def test_delete_database_error(self):
         """It should raise DataValidationError when the database fails on delete"""
         wishlist = WishlistFactory()
         wishlist.create()
         with patch.object(db.session, "commit", side_effect=Exception("db is down")):
-            self.assertRaises(DataValidationError, wishlist.delete)
+            with self.assertRaises(DataValidationError) as context:
+                wishlist.delete()
+        self.assertEqual(str(context.exception), "The record could not be deleted")
 
     ######################################################################
     #  V A L U E S   T H E   D A T A B A S E   R E F U S E S
@@ -353,10 +359,10 @@ class TestWishlist(TestCase):
             data = {"name": "Birthday", "customer_id": bad_id}
             self.assertRaises(DataValidationError, wishlist.deserialize, data)
 
-    def test_create_database_error_hides_the_sql(self):
-        """It should leave the SQL statement out of the error when a save fails"""
+    def test_create_database_error_hides_the_details(self):
+        """It should report a refused save without the database's own error"""
         wishlist = WishlistFactory(name="Birth\x00day")
         with self.assertRaises(DataValidationError) as context:
             wishlist.create()
-        self.assertNotIn("INSERT", str(context.exception))
+        self.assertEqual(str(context.exception), "The record could not be saved")
         self.assertEqual(Wishlist.all(), [])

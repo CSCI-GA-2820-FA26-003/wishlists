@@ -36,13 +36,10 @@ def in_integer_range(value: int) -> bool:
     return MIN_INTEGER <= value <= MAX_INTEGER
 
 
-def database_reason(error: Exception) -> str:
-    """Returns why the database refused a record, without the SQL statement
-
-    SQLAlchemy puts the statement and its parameters in the text of its
-    errors and keeps the database's own message in the orig attribute.
-    """
-    return str(getattr(error, "orig", None) or error)
+# What a client is told when the database refuses a record. The database's
+# own error can name tables and constraints, so it only goes to the log.
+NOT_SAVED = "The record could not be saved"
+NOT_DELETED = "The record could not be deleted"
 
 
 class DataValidationError(Exception):
@@ -78,8 +75,8 @@ class PersistentBase:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            logger.error("Error creating record: %s", self)
-            raise DataValidationError(database_reason(e)) from e
+            logger.error("Error creating record %s: %s", self, e)
+            raise DataValidationError(NOT_SAVED) from e
 
     def update(self) -> None:
         """
@@ -92,8 +89,8 @@ class PersistentBase:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            logger.error("Error updating record: %s", self)
-            raise DataValidationError(database_reason(e)) from e
+            logger.error("Error updating record %s: %s", self, e)
+            raise DataValidationError(NOT_SAVED) from e
 
     def delete(self) -> None:
         """Removes a Account from the data store"""
@@ -103,8 +100,8 @@ class PersistentBase:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            logger.error("Error deleting record: %s", self)
-            raise DataValidationError(database_reason(e)) from e
+            logger.error("Error deleting record %s: %s", self, e)
+            raise DataValidationError(NOT_DELETED) from e
 
     @classmethod
     def all(cls):

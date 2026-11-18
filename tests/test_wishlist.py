@@ -30,6 +30,9 @@ DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
 
+# One more than the largest value a PostgreSQL INTEGER column can hold
+TOO_BIG = 2147483648
+
 
 ######################################################################
 #  W I S H L I S T   M O D E L   T E S T   C A S E S
@@ -298,18 +301,68 @@ class TestWishlist(TestCase):
         """It should raise DataValidationError when the database fails on create"""
         wishlist = WishlistFactory()
         with patch.object(db.session, "commit", side_effect=Exception("db is down")):
-            self.assertRaises(DataValidationError, wishlist.create)
+            with self.assertRaises(DataValidationError) as context:
+                wishlist.create()
+        self.assertEqual(str(context.exception), "The record could not be saved")
 
     def test_update_database_error(self):
         """It should raise DataValidationError when the database fails on update"""
         wishlist = WishlistFactory()
         wishlist.create()
         with patch.object(db.session, "commit", side_effect=Exception("db is down")):
-            self.assertRaises(DataValidationError, wishlist.update)
+            with self.assertRaises(DataValidationError) as context:
+                wishlist.update()
+        self.assertEqual(str(context.exception), "The record could not be saved")
 
     def test_delete_database_error(self):
         """It should raise DataValidationError when the database fails on delete"""
         wishlist = WishlistFactory()
         wishlist.create()
         with patch.object(db.session, "commit", side_effect=Exception("db is down")):
-            self.assertRaises(DataValidationError, wishlist.delete)
+            with self.assertRaises(DataValidationError) as context:
+                wishlist.delete()
+        self.assertEqual(str(context.exception), "The record could not be deleted")
+
+    ######################################################################
+    #  V A L U E S   T H E   D A T A B A S E   R E F U S E S
+    ######################################################################
+
+    def test_find_a_wishlist_id_out_of_range(self):
+        """It should return None for an id that is out of range"""
+        WishlistFactory().create()
+        for big_id in [TOO_BIG, 99999999999999999999]:
+            self.assertIsNone(Wishlist.find(big_id))
+
+    def test_find_by_customer_out_of_range(self):
+        """It should return an empty list for an out of range customer_id"""
+        WishlistFactory(customer_id=1).create()
+        for big_id in [TOO_BIG, -TOO_BIG - 1, 99999999999999999999]:
+            self.assertEqual(Wishlist.find_by_customer(big_id), [])
+
+    def test_find_by_name_with_nul_character(self):
+        """It should return an empty list for a name that can never be saved"""
+        WishlistFactory(name="Birthday").create()
+        self.assertEqual(Wishlist.find_by_name("Birth\x00day"), [])
+
+    def test_deserialize_customer_id_at_the_limits(self):
+        """It should Deserialize and save the largest and smallest customer_id"""
+        for customer_id in [TOO_BIG - 1, -TOO_BIG]:
+            wishlist = Wishlist()
+            wishlist.deserialize({"name": "Birthday", "customer_id": customer_id})
+            wishlist.create()
+            self.assertEqual(Wishlist.find(wishlist.id).customer_id, customer_id)
+
+    def test_deserialize_customer_id_out_of_range(self):
+        """It should not Deserialize a Wishlist with an out of range customer_id"""
+        wishlist = Wishlist()
+        for bad_id in [TOO_BIG, -TOO_BIG - 1, 99999999999999999999]:
+            data = {"name": "Birthday", "customer_id": bad_id}
+            self.assertRaises(DataValidationError, wishlist.deserialize, data)
+
+    def test_create_database_error_hides_the_details(self):
+        """It should report a refused save without the database's own error"""
+        wishlist = WishlistFactory(name="Birth\x00day")
+        with self.assertRaises(DataValidationError) as context:
+            wishlist.create()
+        self.assertEqual(str(context.exception), "The record could not be saved")
+        self.assertEqual(Wishlist.all(), [])

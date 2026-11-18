@@ -26,6 +26,21 @@ logger = logging.getLogger("flask.app")
 
 db = SQLAlchemy()
 
+# Range of a PostgreSQL INTEGER column, the type of every id in this service
+MIN_INTEGER = -2147483648
+MAX_INTEGER = 2147483647
+
+
+def in_integer_range(value: int) -> bool:
+    """Returns True when the value fits in a database INTEGER column"""
+    return MIN_INTEGER <= value <= MAX_INTEGER
+
+
+# What a client is told when the database refuses a record. The database's
+# own error can name tables and constraints, so it only goes to the log.
+NOT_SAVED = "The record could not be saved"
+NOT_DELETED = "The record could not be deleted"
+
 
 class DataValidationError(Exception):
     """Used for an data validation errors when deserializing"""
@@ -60,8 +75,8 @@ class PersistentBase:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            logger.error("Error creating record: %s", self)
-            raise DataValidationError(e) from e
+            logger.error("Error creating record %s: %s", self, e)
+            raise DataValidationError(NOT_SAVED) from e
 
     def update(self) -> None:
         """
@@ -74,8 +89,8 @@ class PersistentBase:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            logger.error("Error updating record: %s", self)
-            raise DataValidationError(e) from e
+            logger.error("Error updating record %s: %s", self, e)
+            raise DataValidationError(NOT_SAVED) from e
 
     def delete(self) -> None:
         """Removes a Account from the data store"""
@@ -85,8 +100,8 @@ class PersistentBase:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            logger.error("Error deleting record: %s", self)
-            raise DataValidationError(e) from e
+            logger.error("Error deleting record %s: %s", self, e)
+            raise DataValidationError(NOT_DELETED) from e
 
     @classmethod
     def all(cls):
@@ -99,5 +114,9 @@ class PersistentBase:
     def find(cls, by_id):
         """Finds a record by it's ID"""
         logger.info("Processing lookup for id %s ...", by_id)
+        # No record can have an id the column cannot hold, and the database
+        # raises an error instead of finding nothing when it is asked for one
+        if not in_integer_range(by_id):
+            return None
         # pylint: disable=no-member
         return cls.query.session.get(cls, by_id)

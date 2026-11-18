@@ -32,6 +32,9 @@ DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql+psycopg://postgres:postgres@localhost:5432/testdb"
 )
 
+# One more than the largest value a PostgreSQL INTEGER column can hold
+TOO_BIG = 2147483648
+
 
 ######################################################################
 #  T E S T   C A S E S
@@ -471,3 +474,68 @@ class TestWishlistService(TestCase):
 
             self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertEqual(resp.mimetype, "application/json")
+
+    # values the database refuses
+
+    def test_get_wishlist_id_out_of_range(self):
+        """It should return 404, not 500, for an out of range id"""
+        for big_id in [TOO_BIG, 99999999999999999999]:
+            resp = self.client.get(f"/wishlists/{big_id}")
+            self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+            self.assertIn("was not found", resp.get_json()["message"])
+
+    def test_update_wishlist_id_out_of_range(self):
+        """It should return 404, not 500, when updating an out of range id"""
+        new_data = {"name": "nothing", "customer_id": 1}
+        resp = self.client.put(f"/wishlists/{TOO_BIG}", json=new_data)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_wishlist_id_out_of_range(self):
+        """It should return no content, not 500, for an out of range id"""
+        resp = self.client.delete(f"/wishlists/{TOO_BIG}")
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(resp.data, b"")
+
+    def test_create_wishlist_customer_id_out_of_range(self):
+        """It should reject an out of range customer ID with a clear message."""
+        data = {"name": "Birthday", "customer_id": TOO_BIG}
+        resp = self.client.post("/wishlists", json=data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        message = resp.get_json()["message"]
+        self.assertEqual(message, "Invalid Wishlist: customer_id is out of range")
+        self.assertEqual(len(Wishlist.all()), 0)
+
+    def test_update_wishlist_customer_id_out_of_range(self):
+        """It should not Update a Wishlist with an out of range customer_id"""
+        wishlist = WishlistFactory(customer_id=1)
+        wishlist.create()
+        url = f"/wishlists/{wishlist.id}"
+        data = {"name": "renamed", "customer_id": TOO_BIG}
+        resp = self.client.put(url, json=data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        message = resp.get_json()["message"]
+        self.assertEqual(message, "Invalid Wishlist: customer_id is out of range")
+        self.assertEqual(self.client.get(url).get_json()["customer_id"], 1)
+
+    def test_query_wishlists_customer_id_out_of_range(self):
+        """It should return an empty list for an out of range customer_id"""
+        WishlistFactory(customer_id=1).create()
+        for big_id in [TOO_BIG, 99999999999999999999]:
+            resp = self.client.get("/wishlists", query_string={"customer_id": big_id})
+            self.assertEqual(resp.status_code, status.HTTP_200_OK)
+            self.assertEqual(resp.get_json(), [])
+
+    def test_query_wishlists_name_with_nul_character(self):
+        """It should return an empty list for a name that can never be saved"""
+        WishlistFactory(name="Birthday").create()
+        resp = self.client.get("/wishlists", query_string={"name": "Birth\x00day"})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.get_json(), [])
+
+    def test_create_wishlist_database_error_hides_the_details(self):
+        """It should not show the database's own error when it refuses a value."""
+        data = {"name": "Birth\x00day", "customer_id": 123}
+        resp = self.client.post("/wishlists", json=data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.get_json()["message"], "The record could not be saved")
+        self.assertEqual(len(Wishlist.all()), 0)

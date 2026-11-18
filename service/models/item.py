@@ -20,7 +20,7 @@ An Item is a product saved in a Wishlist
 """
 
 import logging
-from .persistent_base import db, PersistentBase, DataValidationError
+from .persistent_base import db, PersistentBase, DataValidationError, in_integer_range
 
 logger = logging.getLogger("flask.app")
 
@@ -79,6 +79,8 @@ class Item(db.Model, PersistentBase):
             note = data.get("note")
             if not isinstance(product_id, int) or isinstance(product_id, bool):
                 raise DataValidationError("Invalid Item: product_id must be an integer")
+            if not in_integer_range(product_id):
+                raise DataValidationError("Invalid Item: product_id is out of range")
             if note is not None and not isinstance(note, str):
                 raise DataValidationError("Invalid Item: note must be a string")
             if note is not None and len(note) > NOTE_MAX_LENGTH:
